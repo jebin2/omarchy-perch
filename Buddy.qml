@@ -36,6 +36,15 @@ Item {
   // A speech bubble is showing.
   property bool talking: false
 
+  // The last line she said: its kind (a lines.json section such as
+  // "battery_low" or "window_closed", a time of day such as "morning", "app",
+  // or "say") and mood ("serious", "fun", "sassy" or ""). `lineCount` goes up
+  // with every line, so a pack can react to each one.
+  property string topic: ""
+  property string mood: ""
+  property int lineCount: 0
+  function heard(t, m) { topic = t || ""; mood = m || ""; lineCount++ }
+
   // Thinking: during some calm spells she rests her chin on her hand.
   // 0..1; a pack that has the pose uses it, others ignore it.
   property real thinkAmt: 0

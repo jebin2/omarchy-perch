@@ -66,7 +66,10 @@ Item {
   signal arrived()
   signal leaving()
   signal fell(bool current)
-  signal say(string line)
+  // `topic` is the kind of line (a lines.json section such as "battery_low",
+  // a time of day such as "morning", "app", or "say" for the IPC command)
+  // and `mood` the mood it was picked from, so a character pack can react.
+  signal say(string line, string topic, string mood)
   signal act(string what)
 
   property string lastAddress: ""
@@ -107,6 +110,7 @@ Item {
     if (!current && !previous) return
     fallPending = true
     pendingLine = pickLine(lines.window_closed)
+    pendingMood = pickedMood
     root.fell(current)
     arrivalDelay.interval = 700
     arrivalDelay.restart()
@@ -199,6 +203,7 @@ Item {
   property var lines: ({})
   property double lastSaid: 0
   property string pendingLine: ""
+  property string pendingMood: ""
   property bool greetPending: true
   property bool settled: false   // a few seconds after start, so startup changes stay quiet
 
@@ -239,38 +244,46 @@ Item {
     onFileChanged: reload()
   }
 
+  // The mood of the line pickLine() returned last ("" for a plain list).
+  property string pickedMood: ""
   function pickLine(entry) {
-    var pool = []
-    function add(list) {
+    var pool = [], from = []
+    function add(list, mood) {
       if (!Array.isArray(list)) return
       for (var i = 0; i < list.length && i < 500; i++) {
-        if (typeof list[i] === "string" && list[i].length > 0 && list[i].length <= 160) pool.push(list[i])
+        if (typeof list[i] === "string" && list[i].length > 0 && list[i].length <= 160) { pool.push(list[i]); from.push(mood) }
       }
     }
-    if (Array.isArray(entry)) add(entry)
+    if (Array.isArray(entry)) add(entry, "")
     else if (entry && typeof entry === "object") {
-      for (var m = 0; m < moods.length; m++) add(entry[moods[m]])
+      for (var m = 0; m < moods.length; m++) add(entry[moods[m]], moods[m])
     }
-    return pool.length ? pool[Math.floor(Math.random() * pool.length)] : ""
+    if (!pool.length) { pickedMood = ""; return "" }
+    var k = Math.floor(Math.random() * pool.length)
+    pickedMood = from[k]
+    return pool[k]
   }
 
-  function speakLine(line, force) {
+  function speakLine(line, force, topic, mood) {
     if (!talk || !line || sleeping || !hasWindow || fallPending) return false
     var now = Date.now()
     if (now - lastSaid < (force ? 5000 : quietGapSec * 1000)) return false
     lastSaid = now
-    root.say(line)
+    root.say(line, topic || "", mood || "")
     return true
   }
 
-  function speak(entry, force) { return speakLine(pickLine(entry), force) }
-
-  function timeEntry() {
-    var h = new Date().getHours()
-    var key = h < 2 ? "night" : h < 5 ? "latenight" : h < 11 ? "morning" : h < 14 ? "noon"
-      : h < 18 ? "afternoon" : h < 22 ? "evening" : "night"
-    return lines.time ? lines.time[key] : null
+  function speak(entry, force, topic) {
+    var line = pickLine(entry)
+    return speakLine(line, force, topic, pickedMood)
   }
+
+  function timeKey() {
+    var h = new Date().getHours()
+    return h < 2 ? "night" : h < 5 ? "latenight" : h < 11 ? "morning" : h < 14 ? "noon"
+      : h < 18 ? "afternoon" : h < 22 ? "evening" : "night"
+  }
+  function timeEntry() { return lines.time ? lines.time[timeKey()] : null }
 
   function appEntry() {
     var cls = info && typeof info.class === "string" ? info.class : ""
@@ -294,11 +307,11 @@ Item {
       if (root.pendingLine) {
         var held = root.pendingLine
         root.pendingLine = ""
-        root.speakLine(held, true)
+        root.speakLine(held, true, "window_closed", root.pendingMood)
       } else if (root.greetPending) {
-        if (root.speak(root.timeEntry(), true)) root.greetPending = false
+        if (root.speak(root.timeEntry(), true, root.timeKey())) root.greetPending = false
       } else if (Math.random() < root.appChance) {
-        root.speak(root.appEntry(), false)
+        root.speak(root.appEntry(), false, "app")
       }
     }
   }
@@ -310,7 +323,8 @@ Item {
     running: root.talk && root.hasWindow && !root.sleeping
     onTriggered: {
       interval = root.chatterEverySec * 1000 * (0.7 + Math.random() * 0.6)
-      root.speak(Math.random() < 0.35 ? root.timeEntry() : root.lines.chatter, false)
+      if (Math.random() < 0.35) root.speak(root.timeEntry(), false, root.timeKey())
+      else root.speak(root.lines.chatter, false, "chatter")
     }
   }
 
@@ -322,7 +336,7 @@ Item {
     onIsIdleChanged: {
       if (!isIdle || root.sleeping) return
       root.act("yawn")
-      if (Math.random() < 0.5) root.speak(root.lines.yawn, true)
+      if (Math.random() < 0.5) root.speak(root.lines.yawn, true, "yawn")
     }
   }
 
@@ -333,14 +347,17 @@ Item {
     if (sleeping) { sleptAt = Date.now(); return }
     var napped = sleptAt ? Date.now() - sleptAt : 0
     if (napped > 5 * 60 * 1000) activeMinutes = 0
-    wakeTalk.entry = napped > 20 * 60 * 1000 ? timeEntry() : lines.wake
+    var longNap = napped > 20 * 60 * 1000
+    wakeTalk.entry = longNap ? timeEntry() : lines.wake
+    wakeTalk.topic = longNap ? timeKey() : "wake"
     wakeTalk.restart()
   }
   Timer {
     id: wakeTalk
     property var entry: null
+    property string topic: ""
     interval: 1300
-    onTriggered: root.speak(entry, true)
+    onTriggered: root.speak(entry, true, topic)
   }
 
   // Break reminder after a stretch of active time.
@@ -351,7 +368,7 @@ Item {
     running: !root.sleeping
     onTriggered: {
       root.activeMinutes++
-      if (root.activeMinutes >= root.breakAfterMin && root.speak(root.lines["break"], true)) root.activeMinutes = 0
+      if (root.activeMinutes >= root.breakAfterMin && root.speak(root.lines["break"], true, "break")) root.activeMinutes = 0
     }
   }
 
@@ -366,7 +383,7 @@ Item {
     if (!battery || !battery.isLaptopBattery) return
     var p = battery.percentage
     if (UPower.onBattery && p > 0 && p <= 0.15) {
-      if (!lowWarned && speak(lines.battery_low, true)) lowWarned = true
+      if (!lowWarned && speak(lines.battery_low, true, "battery_low")) lowWarned = true
     } else if (p > 0.2 || !UPower.onBattery) {
       lowWarned = false
     }
@@ -387,7 +404,7 @@ Item {
       var now = UPower.onBattery
       if (now === root.lastOnBattery) return
       root.lastOnBattery = now
-      if (root.settled) root.speak(now ? root.lines.unplugged : root.lines.charging, true)
+      if (root.settled) root.speak(now ? root.lines.unplugged : root.lines.charging, true, now ? "unplugged" : "charging")
       root.checkBattery()
     }
   }
@@ -397,7 +414,7 @@ Item {
     target: Color
     function onAccentChanged() { if (root.settled) themeSettle.restart() }
   }
-  Timer { id: themeSettle; interval: 1500; onTriggered: root.speak(root.lines.theme, true) }
+  Timer { id: themeSettle; interval: 1500; onTriggered: root.speak(root.lines.theme, true, "theme") }
 
   Timer {
     interval: root.pollMs
@@ -496,7 +513,7 @@ Item {
 
     function say(text: string): void {
       var line = String(text || "").trim().slice(0, 160)
-      if (line) root.speakLine(line, true)
+      if (line) root.speakLine(line, true, "say", "")
     }
 
     function act(what: string): void {

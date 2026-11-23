@@ -124,8 +124,10 @@ PanelWindow {
       else bubble.dismiss()
     }
 
-    function onSay(line) {
-      if (win.perch.hasWindow && win.onThisScreen && !win.falling) bubble.show(line)
+    function onSay(line, topic, mood) {
+      if (!(win.perch.hasWindow && win.onThisScreen && !win.falling)) return
+      bubble.show(line)
+      buddy.heard(topic, mood)
     }
 
     function onAct(what) {
