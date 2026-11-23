@@ -45,6 +45,17 @@ Item {
   }
   readonly property string monitorName: monitor ? monitor.name : ""
 
+  // No window focused (an empty workspace): a character that can roam lives
+  // on the desktop of the focused screen instead (PerchWindow sets canRoam).
+  property bool canRoam: false
+  readonly property bool desktop: shown && !!info && !info.address && !fallPending
+  readonly property string desktopMonitor: Hyprland.focusedMonitor ? Hyprland.focusedMonitor.name : ""
+  // The bar's height on that screen (for her ladder).
+  readonly property real desktopReservedTop: {
+    var m = Hyprland.focusedMonitor ? Hyprland.focusedMonitor.lastIpcObject : null
+    return m && m.reserved && m.reserved.length === 4 ? Number(m.reserved[1]) : 0
+  }
+
   // The focused window, as Hyprland last reported it.
   property var info: null
   readonly property bool hasWindow: shown && !!info && !!info.at && info.at.length === 2
@@ -269,7 +280,7 @@ Item {
   }
 
   function speakLine(line, force, topic, mood) {
-    if (!talk || !line || sleeping || !hasWindow || fallPending || meeting) return false
+    if (!talk || !line || sleeping || !(hasWindow || desktop && canRoam) || fallPending || meeting) return false
     var now = Date.now()
     if (now - lastSaid < (force ? 5000 : quietGapSec * 1000)) return false
     lastSaid = now

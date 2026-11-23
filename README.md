@@ -51,6 +51,13 @@ She shows up on the focused window. Nothing else to set up.
   tell when a video is playing (for popcorn).
 - **Break reminder:** after an hour of activity she stretches and reminds
   you to take a break.
+- **Lives on the desktop** of an empty workspace, if her character pack
+  can stand and walk (`roams: true`): she runs in, strolls along the bottom
+  of the screen and does her thing; open a window and she jumps up on it.
+  Mochi just waits for the next window.
+  Packs that can fly take a **broom** on long trips and for joyrides; packs
+  that can climb prop a **ladder** against the bar, climb up and swing there
+  a while.
 - **Hides** on fullscreen windows.
 - Her hoodie follows your theme's accent color.
 

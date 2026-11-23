@@ -71,6 +71,11 @@ Bind your pieces' rotations and visibility to these; Perch animates them.
 | `action`, `actionCount` | A move asked for with `act <name>` that Perch doesn't do itself (e.g. `act cheer`), and a counter that goes up every time: react in `onActionCountChanged` |
 | `calm`, `sleeping` | Between leg-swinging bursts; napping |
 | `walking`, `walkDir`, `running`, `jumping` | Travelling to the next window (`-1` left, `1` right): along a level edge she walks, `running` on long trips (600 px or more), on the swing (`hanging`) the swing slides; `jumping` when the next window isn't level: she flies there in an arc |
+| `roaming` | She's on the desktop of an empty workspace (the bottom of the screen is her floor); only for packs that set `roams: true` on their root |
+| `flying` | On her broom (only packs with `flies: true`): long trips, joyrides on the desktop; `walkDir` is the direction |
+| `climbing`, `climbDir` | On her ladder from the desktop floor to the bar (`climbs: true`), `1` up, `-1` down; up there she `hanging`s from the bar |
+| `deskX`, `goTo(x)` | On the desktop: where she is across the screen (0..1), and `buddy.goTo(0.1)` sends her walking there |
+| `desktopProps` (on the pack's root) | Things to draw on the desktop floor: `[{ source, x (0..1), w, h }]`, sizes in grid units (a plant, a lamp...) |
 | `meeting` | The mic or camera is in use: Perch keeps her quiet |
 | `music`, `movie` | A music player is playing; a video player (or a browser on a video site) is playing |
 | `windowTitle` | The focused window's title |

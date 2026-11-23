@@ -34,6 +34,26 @@ Item {
   readonly property bool packOwnsFall: !!(character.item && character.item.ownFall)
   // The pack draws signs itself: then the text isn't also said in a bubble.
   readonly property bool packHasSign: !!(character.item && character.item.hasSign)
+  // The pack can stand and walk on the desktop (an empty workspace).
+  readonly property bool packRoams: !!(character.item && character.item.roams)
+  // She's on the desktop: the bottom of the screen is her floor.
+  property bool roaming: false
+  // Packs that can fly a broom (`flies: true`) take it on long trips and for
+  // joyrides on the desktop; packs that can climb (`climbs: true`) take a
+  // ladder from the desktop floor up to the bar and swing there a while.
+  readonly property bool packFlies: !!(character.item && character.item.flies)
+  readonly property bool packClimbs: !!(character.item && character.item.climbs)
+  property bool flying: false
+  property bool climbing: false
+  property int climbDir: 1             // 1 up, -1 down
+  // On the desktop: where she is across the screen (0 left .. 1 right), and
+  // a way for the pack to send her somewhere (`goTo(0.1)`).
+  property real deskX: 0.5
+  signal wantsToGo(real fraction)
+  function goTo(fraction) { wantsToGo(Math.max(0, Math.min(1, Number(fraction) || 0))) }
+  // Things the pack puts on the desktop floor: [{ source, x (0..1), w, h }]
+  // in grid units; Perch draws them at that spot on the bottom of the screen.
+  readonly property var desktopProps: character.item && Array.isArray(character.item.desktopProps) ? character.item.desktopProps : []
   // Room a pack draws above its 64 x 80 box (hats, standing up to walk), in
   // grid units: her window keeps that much space above her.
   readonly property real headroom: character.item && Number(character.item.headroom) > 0
