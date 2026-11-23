@@ -71,6 +71,8 @@ Item {
   // and `mood` the mood it was picked from, so a character pack can react.
   signal say(string line, string topic, string mood)
   signal act(string what)
+  // A message to hold up on a sign (a pack that has one shows it).
+  signal showSign(string text)
 
   property string lastAddress: ""
   property string prevAddress: ""
@@ -138,7 +140,7 @@ Item {
   // Read on every save; the bar panel writes it through the `set` command.
 
   readonly property real minSize: 0.5
-  readonly property real maxSize: 1.6
+  readonly property real maxSize: 2.0
   property bool shown: true
   onShownChanged: if (shown) query()
   property var config: ({})
@@ -517,13 +519,22 @@ Item {
       if (line) root.speakLine(line, true, "say", "")
     }
 
+    // `omarchy-shell jebin2.perch sign "text"`: she holds the text up on a
+    // sign (if her pack has one) and says it.
+    function sign(text: string): void {
+      var line = String(text || "").trim().slice(0, 80)
+      if (!line) return
+      root.showSign(line)
+      root.speakLine(line, true, "sign", "")
+    }
+
     function act(what: string): void {
       var move = String(what || "")
       if (move === "fall") { root.fallPending = true; root.fell(true); arrivalDelay.interval = 700; arrivalDelay.restart() }
       else if (/^[a-z][a-z0-9_-]{0,31}$/.test(move)) root.act(move)
     }
 
-    // character <name> | size <0.5..1.6> | shown true/false | talk true/false
+    // character <name> | size <0.5..2.0> | shown true/false | talk true/false
     function set(key: string, value: string): void {
       root.setOption(String(key || ""), String(value || ""))
     }

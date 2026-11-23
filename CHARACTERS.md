@@ -71,6 +71,7 @@ Bind your pieces' rotations and visibility to these; Perch animates them.
 | `action`, `actionCount` | A move asked for with `act <name>` that Perch doesn't do itself (e.g. `act cheer`), and a counter that goes up every time: react in `onActionCountChanged` |
 | `calm`, `sleeping` | Between leg-swinging bursts; napping |
 | `walking`, `walkDir`, `running`, `jumping` | Travelling to the next window (`-1` left, `1` right): along a level edge she walks, `running` on long trips (600 px or more), on the swing (`hanging`) the swing slides; `jumping` when the next window isn't level: she flies there in an arc |
+| `signText`, `signCount` | A message to hold up on a sign (`omarchy-shell jebin2.perch sign "text"`, or the pack's own `buddy.showSign(text)`): react in `onSignCountChanged` |
 | `patted`, `pats`, `patCount` | A click on her: `patted` for a moment, `pats` = clicks in the current quick burst, `patCount` goes up with every click: react in `onPatCountChanged` |
 | `startled`, `startleDir` | The pointer touched her; she scoots left (`-1`) or right (`1`) |
 | `waveAmt`, `yawnAmt`, `stretchAmt` | 0..1 while she waves, yawns or stretches |
@@ -79,6 +80,8 @@ Bind your pieces' rotations and visibility to these; Perch animates them.
 | `sleepAmt` | 0..1 while dozing off |
 | `t`, `wav(period, shift)` | The animation clock (0..12 s) and a sine of it, for your own loops; periods must divide 12 |
 | `cache`, `tex` | Put `layer.enabled: buddy.cache; layer.smooth: true; layer.textureSize: Qt.size(64 * buddy.tex, 80 * buddy.tex)` on each moving group: it is drawn once and then only moved, which keeps the shell light |
+
+A pack can make her talk with `buddy.say(text, topic)`: the line goes through Perch like any other (Talk and the quiet gap apply) and comes back as `topic`/`line`.
 
 A pack can also set, on its root item:
 

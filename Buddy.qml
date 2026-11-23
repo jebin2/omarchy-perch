@@ -70,6 +70,17 @@ Item {
   property int actionCount: 0
   function did(what) { action = what || ""; actionCount++ }
 
+  // A message to hold up on a sign: `signCount` goes up with each, so a pack
+  // with a sign reacts in `onSignCountChanged`.
+  property string signText: ""
+  property int signCount: 0
+  function showSign(t) { signText = t || ""; signCount++ }
+
+  // A pack can make her say something (and show it on a sign): the line
+  // goes through Perch like any other, so the quiet gap and Talk apply.
+  signal wantsToSay(string line, string topic)
+  function say(line, topic) { if (line) wantsToSay(String(line).slice(0, 160), topic || "pack") }
+
   // Thinking: during some calm spells she rests her chin on her hand.
   // 0..1; a pack that has the pose uses it, others ignore it.
   property real thinkAmt: 0

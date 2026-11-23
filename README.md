@@ -53,7 +53,7 @@ Perch adds a small kiwi icon to the bar. Click it for a panel to:
 - show or hide her (or right-click the icon),
 - turn her speech bubbles on or off,
 - pick a character (Mochi, or your own packs; see [CHARACTERS.md](CHARACTERS.md)),
-- change her size (50–160%),
+- change her size (50–200%),
 - make her wave, think, yawn, stretch or fall.
 
 The panel saves to `~/.config/perch/config.json`, which you can also edit:
@@ -116,6 +116,7 @@ case-insensitively, as regular expressions. The sections are `app`, `time`
 
 ```bash
 omarchy-shell jebin2.perch say "build passed! 🎉"
+omarchy-shell jebin2.perch sign "DON'T overthink"   # holds it up on a sign, if her pack has one, and says it
 omarchy-shell jebin2.perch act wave      # also: yawn, stretch, think, fall
 ```
 

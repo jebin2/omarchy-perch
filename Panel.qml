@@ -182,7 +182,7 @@ Panel {
             width: parent.width
             bar: root.bar
             minimum: 0.5
-            maximum: 1.6
+            maximum: 2.0
             step: 0.05
             value: root.size
             onReleased: function(v) { root.set("size", v.toFixed(2)) }

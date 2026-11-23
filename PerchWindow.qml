@@ -197,6 +197,10 @@ PanelWindow {
       buddy.heard(topic, mood, line)
     }
 
+    function onShowSign(text) {
+      if (win.perch.hasWindow && win.onThisScreen) buddy.showSign(text)
+    }
+
     function onAct(what) {
       if (!(win.perch.hasWindow && win.onThisScreen)) return
       if (what === "wave") buddy.wave()
@@ -233,5 +237,6 @@ PanelWindow {
     characterUrl: win.perch.characterUrl
     hanging: win.perch.hasWindow && win.onThisScreen && win.hanging
     onPoked: function(x) { win.flee(x) }
+    onWantsToSay: function(line, topic) { win.perch.speakLine(line, true, topic, "") }
   }
 }
