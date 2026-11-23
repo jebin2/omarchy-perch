@@ -96,6 +96,54 @@ omarchy-shell jebin2.perch act wave      # also: yawn, stretch, fall
 
 Handy at the end of a long script.
 
+## Every line she says
+
+All 93 lines from [`lines.json`](lines.json), by when she says them. A line
+shown in all three columns is said in any mood. To change or add lines, see
+[Your own lines](#your-own-lines).
+
+### Greetings by time of day
+
+The first time she appears, after a long nap, and sometimes as chatter.
+
+| Time | Serious | Fun | Sassy |
+|---|---|---|---|
+| Morning (5–11) | morning! water first 💧 | good morning! ☀️<br>morning! ready to go? | up early… or still up late? |
+| Noon (11–14) | eat something real, okay? | lunch time? 🍜 | I'd eat, if I could. you can. |
+| Afternoon (14–18) | afternoon slump? short walk! | afternoon snack? 🍪 | coffee number three, huh ☕ |
+| Evening (18–22) | wrap up soon? | evening already! 🌆 | overtime again? |
+| Night (22–2) | screens off soon, sleep is good | it's getting late… 🌙 | bedtime was a suggestion, I see |
+| Late night (2–5) | it's really late. go to bed. | …why are we still awake 🦉 | even the owls went home |
+
+### About the app you switched to
+
+Now and then (35% of the time) when you focus a window. Matched against the
+window's class.
+
+| App | Serious | Fun | Sassy |
+|---|---|---|---|
+| **Terminals**<br><sub>`foot`, `alacritty`, `kitty`, `ghostty`, `wezterm`, `konsole`, `terminal`</sub> | commit early, commit often<br>read it twice, run it once | sudo make me a sandwich 🥪<br>type faster, I'm watching 👀<br>ooh, green text time | rm -rf? not on my watch<br>another terminal? bold. |
+| **Browsers**<br><sub>`brave`, `chrom`, `firefox`, `zen`, `librewolf`, `browser`</sub> | bookmark it, then close it<br>tabs eat memory, just saying | one more tab won't hurt<br>ooh, the internet! 🌐 | that's like 40 tabs<br>"research", sure 🙃 |
+| **Editors and notes**<br><sub>`code`, `cursor`, `zed`, `nvim`, `neovim`, `jetbrains`, `idea`, `emacs`, `omawrite`, `typora`, `obsidian`</sub> | small steps, then test<br>good names save hours | ship it! 🚀<br>it works on my machine ✨ | bug or feature? 🐛<br>comments are nice, you know |
+| **Music and video**<br><sub>`spotify`, `mpv`, `vlc`, `celluloid`, `youtube`, `music`</sub> | volume check: protect those ears | ♪ la la la ♪<br>turn it up! 🎶 | your playlist, your rules… I guess |
+| **Chat**<br><sub>`discord`, `telegram`, `signal`, `slack`, `whatsapp`, `element`, `vesktop`</sub> | replying later is okay too | say hi from me! 👋 | gossip time? 👀 |
+| **Games**<br><sub>`steam`, `lutris`, `heroic`, `wine`, `gamescope`, `igi`</sub> | one round, then a break? | game time!! let's go 🎮 | "just one more game" |
+| **File managers**<br><sub>`nautilus`, `thunar`, `dolphin`, `files`</sub> | tidy files, tidy mind | so many folders… | lost something again? |
+
+### Events and chatter
+
+| When | Serious | Fun | Sassy |
+|---|---|---|---|
+| Random chatter, every few minutes | posture check!<br>blink a few times, eyes need it<br>deep breath in… and out<br>drink some water 💧 | *hums*<br>I like this corner<br>swing, swing, swing~<br>do windows have feelings?<br>hehe | I could do this faster<br>are we working or what?<br>I see you. 👀<br>nice cursor work. I guess. |
+| After an hour of activity | an hour in. stand up and stretch?<br>water break? 💧 | stretch with me! ~<br>wiggle your toes 🦶 | your chair can survive without you. stand up. |
+| Battery at 15% or less | battery's low, plug in soon | I'm hungry… charger? 🔋 | feed me or we both nap |
+| Charger plugged in | charging, thanks! | nom nom ⚡<br>yum, power! | finally, food |
+| Charger unplugged | on battery now, go easy | off the leash! 🏃‍♀️ | living dangerously |
+| Her window closed (she falls off) | oof. found a new spot. | waah! 😵<br>whoops! | hey! I was sitting there |
+| New theme | fresh look! | new outfit! ✨<br>ooh, I like this color | do I look good? I look good. |
+| Back after a nap | welcome back | oh! you're back 👋<br>*stretches* hi again | took you long enough |
+| Yawning before a nap | *yaaawn*<br>*yawn*… so sleepy | *yaaawn*<br>*yawn*… so sleepy | *yaaawn*<br>*yawn*… so sleepy |
+
 ## How it works
 
 Perch is a background (`service`) plugin. It draws Mochi in a small,
