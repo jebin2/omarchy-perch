@@ -1,7 +1,9 @@
 import QtQuick
+import Qt.labs.folderlistmodel
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
+import Quickshell.Services.Mpris
 import Quickshell.Services.UPower
 import Quickshell.Wayland
 import qs.Commons
@@ -267,7 +269,7 @@ Item {
   }
 
   function speakLine(line, force, topic, mood) {
-    if (!talk || !line || sleeping || !hasWindow || fallPending) return false
+    if (!talk || !line || sleeping || !hasWindow || fallPending || meeting) return false
     var now = Date.now()
     if (now - lastSaid < (force ? 5000 : quietGapSec * 1000)) return false
     lastSaid = now
@@ -370,8 +372,108 @@ Item {
     running: !root.sleeping
     onTriggered: {
       root.activeMinutes++
-      if (root.activeMinutes >= root.breakAfterMin && root.speak(root.lines["break"], true, "break")) root.activeMinutes = 0
+      if (root.activeMinutes < root.breakAfterMin || !root.talk || !root.hasWindow || root.meeting) return
+      // She stretches, then holds the reminder up (or says it).
+      root.activeMinutes = 0
+      root.act("stretch")
+      breakSign.restart()
     }
+  }
+
+  Timer {
+    id: breakSign
+    interval: 2400
+    onTriggered: { var l = root.pickLine(root.lines["break"]); if (l) root.showSign(l) }
+  }
+
+  // ---- Reminders: `omarchy reminder 30 "Pickup Jack"` ------------------------
+  // Omarchy keeps a reminder's text in a file until it goes off, then deletes
+  // it. A file that disappears around its due time (its name holds the
+  // minutes and when it was set) has just gone off: she holds it up.
+  readonly property string reminderDir: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/omarchy-reminders"
+  property var reminders: ({})
+  Process {
+    id: reminderDirProc
+    command: ["mkdir", "-p", root.reminderDir]
+    running: true
+    onExited: reminderFiles.folder = "file://" + root.reminderDir
+  }
+  FolderListModel {
+    id: reminderFiles
+    nameFilters: ["*.message"]
+    showDirs: false
+    onCountChanged: reminderRead.running = true
+    onStatusChanged: if (status === FolderListModel.Ready) reminderRead.running = true
+  }
+  Process {
+    id: reminderRead
+    command: ["sh", "-c", "for f in \"$1\"/*.message; do [ -f \"$f\" ] && printf '%s\\t%s\\n' \"${f##*/}\" \"$(tr '\\n\\t' '  ' < \"$f\")\"; done", "sh", root.reminderDir]
+    stdout: StdioCollector {
+      onStreamFinished: {
+        var now = {}, old = root.reminders
+        text.split("\n").forEach(function(l) {
+          var i = l.indexOf("\t")
+          if (i > 0) now[l.slice(0, i)] = l.slice(i + 1).trim()
+        })
+        for (var name in old) {
+          if (now[name] !== undefined) continue
+          var m = /-(\d+)m-(\d+)\.message$/.exec(name)
+          if (m && Math.abs(Date.now() / 1000 - (Number(m[2]) + Number(m[1]) * 60)) < 120 && old[name])
+            root.showSign(old[name].slice(0, 80))
+        }
+        root.reminders = now
+      }
+    }
+  }
+
+  // ---- Meetings: the mic (not a level meter) or the camera in use ------------
+  // She stays quiet (no lines, no songs) until it's free again. Two busy
+  // checks in a row count, so a quick dictation doesn't.
+  property bool meeting: false
+  property int busyChecks: 0
+  Process {
+    id: busyProc
+    command: ["sh", "-c", "m=\" $(pactl list short sources 2>/dev/null | awk '/\\.monitor/{print $1}' | tr '\\n' ' ') \"; pactl list short source-outputs 2>/dev/null | awk -v m=\"$m\" 'index(m, \" \" $2 \" \") == 0' | wc -l; fuser /dev/video* 2>/dev/null | wc -w"]
+    stdout: StdioCollector {
+      onStreamFinished: {
+        var n = text.trim().split(/\s+/).map(Number)
+        var busy = (n[0] || 0) + (n[1] || 0) > 0
+        root.busyChecks = busy ? root.busyChecks + 1 : 0
+        root.meeting = root.busyChecks >= 2
+      }
+    }
+  }
+  Timer { interval: 15000; repeat: true; running: true; triggeredOnStart: true; onTriggered: busyProc.running = true }
+
+  // ---- Now playing ----------------------------------------------------------
+  // A music player (not a browser or a video player): a new song goes on her
+  // sign, at most every 2 minutes. A video player, or a browser on a video
+  // site, is a movie: packs can grab some popcorn.
+  readonly property var player: {
+    var ps = Mpris.players.values
+    for (var i = 0; i < ps.length; i++) if (ps[i] && ps[i].isPlaying) return ps[i]
+    return null
+  }
+  function kindOf(p) {
+    if (!p) return ""
+    var id = String((p.identity || "") + " " + (p.desktopEntry || "")).toLowerCase()
+    if (/mpv|vlc|celluloid|totem|haruna|kodi|jellyfin|stremio|plex|showtime/.test(id)) return "video"
+    if (/firefox|chrom|brave|vivaldi|edge|zen|librewolf|opera|helium/.test(id)) return "browser"
+    return "music"
+  }
+  readonly property string playing: kindOf(player)
+  readonly property string windowTitle: info && typeof info.title === "string" ? info.title : ""
+  readonly property bool music: playing === "music"
+  readonly property bool movie: playing === "video"
+    || playing === "browser" && /netflix|prime video|disney|hotstar|jiocinema|youtube|zee5|sonyliv|mubi|crunchyroll|hulu|max\b/i.test(windowTitle)
+  readonly property string song: music && player.trackTitle
+    ? "\u266a " + player.trackTitle + (player.trackArtist ? " \u2013 " + player.trackArtist : "") : ""
+  property real lastSong: 0
+  onSongChanged: {
+    if (!song || !talk || meeting || !hasWindow || sleeping) return
+    if (Date.now() - lastSong < 120000) return
+    lastSong = Date.now()
+    showSign(song.slice(0, 80))
   }
 
   // Battery and charger. This laptop's charger state can flicker, so a change

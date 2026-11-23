@@ -26,7 +26,7 @@ She shows up on the focused window. Nothing else to set up.
 - **Travels** to the window you switch to, then waves: along a level edge
   she **walks** (runs if it's far; on her swing under the bar the swing
   slides along), and anywhere else on the screen she **jumps** there.
-- **Talks** in comic speech bubbles (see below).
+- **Talks** in little cloud bubbles (see below).
 - **Yawns** a few seconds before she naps, then **naps** after 90 seconds
   without keyboard or mouse input: eyes closed, a sleep bubble and a few z's.
   While a video is playing (anything that keeps the screen awake) she stays
@@ -39,6 +39,18 @@ She shows up on the focused window. Nothing else to set up.
   her corner a few seconds after the pointer has gone.
 - **Likes a pat:** click her before she scoots and she smiles, and stays put
   for more.
+- **Can be picked up:** drag her onto any window (or anywhere along an
+  edge) and she sits there for 3 minutes, whichever window is focused, then
+  goes back. **Double-click** her for a high five.
+- **Holds up your reminders:** when an `omarchy reminder 30 "Pickup Jack"`
+  goes off, she shows (or says) "Pickup Jack".
+- **Keeps quiet in meetings:** while the mic or camera is in use, she says
+  nothing (checked every 15 s; a quick dictation doesn't count).
+- **Knows what's playing:** a new song in a music player goes on her sign
+  ("♪ Song – Artist", at most every 2 minutes). Character packs can also
+  tell when a video is playing (for popcorn).
+- **Break reminder:** after an hour of activity she stretches and reminds
+  you to take a break.
 - **Hides** on fullscreen windows.
 - Her hoodie follows your theme's accent color.
 

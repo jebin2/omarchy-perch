@@ -74,6 +74,23 @@ Item {
 
   // A message to hold up on a sign: `signCount` goes up with each, so a pack
   // with a sign reacts in `onSignCountChanged`.
+  // What's going on around her (Perch sets these; packs can use them):
+  // `meeting` the mic or camera is in use (she keeps quiet), `music` a music
+  // player is playing, `movie` a video is playing, `windowTitle` of the
+  // focused window.
+  property bool meeting: false
+  property bool music: false
+  property bool movie: false
+  property string windowTitle: ""
+
+  // Picked up with the pointer: `dragging` while held; `dragOffset` how far
+  // the pointer has moved since (Perch moves her). A double click is a high
+  // five: `highFives` goes up.
+  property bool dragging: false
+  property point dragOffset: Qt.point(0, 0)
+  signal dropped()
+  property int highFives: 0
+
   property string signText: ""
   property int signCount: 0
   function showSign(t) { signText = t || ""; signCount++ }
@@ -256,12 +273,25 @@ Item {
     }
     TapHandler {
       onTapped: { pokeDelay.stop(); buddy.pat() }
+      onDoubleTapped: { pokeDelay.stop(); buddy.highFives++ }
+    }
+    DragHandler {
+      id: drag
+      target: null
+      onActiveChanged: {
+        pokeDelay.stop()
+        if (active) { buddy.dragOffset = Qt.point(0, 0); buddy.dragging = true }
+        else { buddy.dragging = false; buddy.dropped() }
+      }
+      onCentroidChanged: if (active) buddy.dragOffset = Qt.point(
+        centroid.scenePosition.x - centroid.scenePressPosition.x,
+        centroid.scenePosition.y - centroid.scenePressPosition.y)
     }
     Timer {
       id: pokeDelay
       property real x: 0
-      interval: 380
-      onTriggered: if (hover.hovered) buddy.poked(x)
+      interval: 600   // time to grab her first
+      onTriggered: if (hover.hovered && !buddy.dragging) buddy.poked(x)
     }
   }
 

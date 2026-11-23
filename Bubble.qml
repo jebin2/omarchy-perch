@@ -2,34 +2,42 @@ import QtQuick
 import QtQuick.Shapes
 import qs.Commons
 
-// A comic speech bubble with its tail on the right, pointing at Mochi.
-// `active` is true from the moment it starts showing until it has faded out,
-// so the window can make room for it only while it is there.
+// A cloud-shaped speech bubble: a puffy outline with two little puffs
+// trailing off to the right, toward Mochi.
+// `active` is true from the moment it starts showing until it has faded out.
 Item {
   id: bubble
 
-  property real maxWidth: 180
+  property real maxWidth: 200
   property bool active: false
   property string text: ""
 
-  readonly property real tail: 7
+  readonly property real tail: 16      // room for the trailing puffs
   readonly property real padX: 9
-  readonly property real padY: 6
-  readonly property real bodyWidth: Math.min(maxWidth, metrics.advanceWidth + padX * 2 + 1)
+  readonly property real padY: 5
+  readonly property real textWidth: Math.min(maxWidth - 2 * edge - tail, metrics.advanceWidth + 1)
+  readonly property real bodyWidth: textWidth + padX * 2
+  readonly property real bodyHeight: label.implicitHeight + padY * 2
+  // How far the puffs bulge out of the text box.
+  readonly property real edge: 6
 
-  // Rounded box with the tail on its right side, near the top.
-  readonly property string outline: {
-    var w = bodyWidth, h = height, r = Math.min(9, h / 2), t = tail, e = 0.7
-    var ty = Math.min(h - r - 4, 12)
-    return "M " + r + " " + e + " L " + (w - r) + " " + e + " Q " + w + " " + e + " " + w + " " + r
-      + " L " + w + " " + (ty - 3) + " L " + (w + t - e) + " " + (ty + 2.5) + " L " + w + " " + (ty + 5)
-      + " L " + w + " " + (h - r) + " Q " + w + " " + (h - e) + " " + (w - r) + " " + (h - e)
-      + " L " + r + " " + (h - e) + " Q " + e + " " + (h - e) + " " + e + " " + (h - r)
-      + " L " + e + " " + r + " Q " + e + " " + e + " " + r + " " + e + " Z"
+  // The cloud: arcs bulging out along each side of the box.
+  function cloud(x, y, w, h) {
+    var nx = Math.max(2, Math.round(w / 20)), ny = Math.max(1, Math.round(h / 20))
+    var dx = w / nx, dy = h / ny
+    var rx = dx * 0.62, ry = dy * 0.62
+    function arc(r, px, py) { return " A " + r.toFixed(2) + " " + r.toFixed(2) + " 0 0 1 " + px.toFixed(2) + " " + py.toFixed(2) }
+    var p = "M " + x + " " + y, k
+    for (k = 1; k <= nx; k++) p += arc(rx, x + k * dx, y)
+    for (k = 1; k <= ny; k++) p += arc(ry, x + w, y + k * dy)
+    for (k = 1; k <= nx; k++) p += arc(rx, x + w - k * dx, y + h)
+    for (k = 1; k <= ny; k++) p += arc(ry, x, y + h - k * dy)
+    return p + " Z"
   }
+  readonly property string outline: cloud(edge, edge, bodyWidth, bodyHeight)
 
-  width: bodyWidth + tail
-  height: label.implicitHeight + padY * 2
+  width: bodyWidth + 2 * edge + tail
+  height: bodyHeight + 2 * edge
   opacity: 0
   scale: 0.96
   transformOrigin: Item.Right
@@ -81,13 +89,31 @@ Item {
     }
   }
 
+  // Two little puffs drifting from the cloud toward her.
+  Repeater {
+    model: [[5, 4], [3.2, 13.5]]
+    Rectangle {
+      required property var modelData
+      width: modelData[0] * 2
+      height: width
+      radius: width / 2
+      x: bubble.edge * 2 + bubble.bodyWidth - 1 + modelData[1] - width / 2
+      y: bubble.edge + bubble.bodyHeight * 0.5 + modelData[1] * 0.3 - width / 2
+      color: "#fffdf7"
+      border.color: "#3a2c46"
+      border.width: 1.3
+      antialiasing: true
+    }
+  }
+
   Text {
     id: label
-    x: bubble.padX
-    y: bubble.padY
-    width: bubble.bodyWidth - bubble.padX * 2
+    x: bubble.edge + bubble.padX
+    y: bubble.edge + bubble.padY
+    width: bubble.textWidth
     textFormat: Text.PlainText
     wrapMode: Text.WordWrap
+    horizontalAlignment: Text.AlignHCenter
     text: bubble.text
     color: "#2a2140"
     font.pixelSize: 12

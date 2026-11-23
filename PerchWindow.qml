@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
 import qs.Commons
 
@@ -25,11 +26,86 @@ PanelWindow {
   // Her right edge goes `inset` from the window's right edge. With room above
   // the window she sits on its top border; a window right under the bar
   // leaves no room, so there she swings from the border, inside the window.
-  readonly property bool hanging: perch.winY - buddy.sitHeight < screenY + perch.reservedTop
-  readonly property int wantLeft: Math.round(perch.winX + perch.winW - perch.inset - buddy.width - screenX)
-  readonly property int wantTop: Math.round(hanging
-    ? perch.winY + perch.borderSize - screenY
-    : perch.winY - buddy.seatY - screenY)
+  function hangsOn(y) { return y - buddy.sitHeight < screenY + perch.reservedTop }
+  function seatTop(y, hang) { return Math.round(hang ? y + perch.borderSize - screenY : y - buddy.seatY - screenY) }
+  readonly property bool hanging: pin ? pin.hanging : hangsOn(perch.winY)
+  readonly property int wantLeft: pin ? pin.left : Math.round(perch.winX + perch.winW - perch.inset - buddy.width - screenX)
+  readonly property int wantTop: pin ? pin.top : seatTop(perch.winY, hanging)
+
+  // ---- Picked up and put down ---------------------------------------------
+  // Drag her anywhere: she sits on the window you drop her on (at that
+  // spot) for 3 minutes, whatever is focused, then goes back. Dropped where
+  // there's no window, she just goes back.
+  property var pin: null         // { left, top, hanging, ws }
+  property real dragBaseLeft: 0
+  property real dragBaseTop: 0
+  property real settleDX: 0
+  property real settleDY: 0
+  NumberAnimation { id: settleX; target: win; property: "settleDX"; to: 0; duration: 380; easing.type: Easing.OutBack }
+  NumberAnimation { id: settleY; target: win; property: "settleDY"; to: 0; duration: 380; easing.type: Easing.OutBounce }
+  Timer {
+    id: pinEnd
+    interval: 180000
+    onTriggered: win.unpin(true)
+  }
+  function unpin(walkBack) {
+    if (!pin) return
+    var from = { left: liveLeft, top: liveTop, hanging: hanging, at: Date.now() }
+    pin = null
+    pinEnd.stop()
+    if (walkBack) Qt.callLater(function() { win.maybeWalk(from) })
+  }
+  function startDrag() {
+    walkAnim.stop(); walkT = 0; buddy.walking = false; buddy.running = false; buddy.jumping = false
+    homeTimer.stop(); dodgeMs = 0; dodge = 0
+    settleX.stop(); settleY.stop(); settleDX = 0; settleDY = 0
+    dragBaseLeft = curLeft
+    dragBaseTop = curTop
+    bubble.dismiss()
+  }
+  function drop() {
+    dropLeft = dragBaseLeft + buddy.dragOffset.x
+    dropTop = dragBaseTop + buddy.dragOffset.y
+    landing = true
+    clientsProc.running = true
+  }
+  property real dropLeft: 0
+  property bool landing: false   // let go, waiting for the window list
+  property real dropTop: 0
+  function land(clients) {
+    // Her seat line, in screen coordinates.
+    var cx = screenX + dropLeft + buddy.width / 2
+    var sy = screenY + dropTop + buddy.seatY
+    var ws = win.perch.info && win.perch.info.workspace ? win.perch.info.workspace.id : null
+    var best = null, bestD = 1e9
+    for (var i = 0; i < clients.length; i++) {
+      var c = clients[i]
+      if (!c || !c.at || !c.size || c.hidden || c.mapped === false || !c.workspace || c.workspace.id !== ws) continue
+      var x = c.at[0] - perch.borderSize, y = c.at[1] - perch.borderSize, wd = c.size[0] + 2 * perch.borderSize
+      if (cx < x || cx > x + wd || x < screenX || x >= screenX + screenW) continue
+      var d = Math.abs(y - sy)
+      if (d < bestD) { bestD = d; best = { x: x, y: y, w: wd } }
+    }
+    var heldLeft = dropLeft, heldTop = dropTop
+    landing = false
+    if (best) {
+      var hang = hangsOn(best.y)
+      var left = Math.round(Math.max(best.x - screenX + 2, Math.min(heldLeft, best.x + best.w - screenX - buddy.width - 2)))
+      pin = { left: clampLeft(left), top: seatTop(best.y, hang), hanging: hang, ws: ws }
+      pinEnd.restart()
+    } else pin = null
+    // From where she was let go to her seat, with a little bounce.
+    settleDX = heldLeft - clampLeft(wantLeft)
+    settleDY = heldTop - Math.max(0, wantTop)
+    settleX.restart(); settleY.restart()
+  }
+  Process {
+    id: clientsProc
+    command: ["hyprctl", "clients", "-j"]
+    stdout: StdioCollector {
+      onStreamFinished: { var c = []; try { c = JSON.parse(text) } catch (e) {} win.land(c) }
+    }
+  }
 
   // How far she has scooted left from her corner, px (0 or less).
   property real dodge: 0
@@ -76,9 +152,13 @@ PanelWindow {
   // move is plain drawing and stays smooth (moving a layer window shows up a
   // frame late, which made her jump).
   function clampLeft(v) { return Math.max(0, Math.min(v, screenW - buddy.width)) }
-  readonly property real curLeft: clampLeft(wantLeft + dodge + walkT * walkDX)
+  readonly property real curLeft: buddy.dragging ? dragBaseLeft + buddy.dragOffset.x
+    : landing ? dropLeft
+    : clampLeft(wantLeft + dodge + walkT * walkDX) + settleDX
   readonly property real arcLift: buddy.jumping ? jumpHeight * Math.sin(Math.PI * walkT) : 0
-  readonly property real curTop: Math.max(0, wantTop + walkT * walkDY) - arcLift
+  readonly property real curTop: buddy.dragging ? dragBaseTop + buddy.dragOffset.y
+    : landing ? dropTop
+    : Math.max(0, wantTop + walkT * walkDY) - arcLift + settleDY
   readonly property int liveLeft: Math.round(curLeft)
   readonly property int liveTop: Math.round(curTop)
   property var prevSeat: null
@@ -164,6 +244,15 @@ PanelWindow {
     target: win.perch
 
     function onLeaving() {
+      // Put down somewhere: she stays there, unless you've gone to another
+      // workspace.
+      if (win.pin) {
+        Qt.callLater(function() {
+          var info = win.perch.info
+          if (!info || !info.workspace || info.workspace.id !== win.pin.ws) win.unpin(false)
+        })
+        return
+      }
       win.prevSeat = win.here && !win.falling ? { left: win.liveLeft, top: win.liveTop, hanging: win.hanging, at: Date.now() } : null
       // The new window's place is known right after this signal.
       var from = win.walkable() ? win.prevSeat : null
@@ -176,6 +265,7 @@ PanelWindow {
         : (win.prevSeat && Date.now() - win.prevSeat.at < 1500 ? win.prevSeat : null)
       if (!seat) return
       walkAnim.stop(); win.walkT = 0; buddy.walking = false; buddy.running = false; buddy.jumping = false
+      win.unpin(false)
       bubble.dismiss()
       win.fallLeft = seat.left
       win.fallTop = seat.top
@@ -185,7 +275,7 @@ PanelWindow {
     }
 
     function onArrived() {
-      if (buddy.walking) return
+      if (buddy.walking || win.pin) return
       win.snapHome()
       if (win.perch.hasWindow && win.onThisScreen) buddy.arrive()
       else bubble.dismiss()
@@ -240,5 +330,11 @@ PanelWindow {
     hanging: win.perch.hasWindow && win.onThisScreen && win.hanging
     onPoked: function(x) { win.flee(x) }
     onWantsToSay: function(line, topic) { win.perch.speakLine(line, true, topic, "") }
+    meeting: win.perch.meeting
+    music: win.perch.music
+    movie: win.perch.movie
+    windowTitle: win.onThisScreen ? win.perch.windowTitle : ""
+    onDraggingChanged: if (dragging) win.startDrag()
+    onDropped: win.drop()
   }
 }
