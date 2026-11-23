@@ -32,6 +32,19 @@ Item {
   // fades her instead of also tipping her over).
   readonly property bool packOwnsSwing: !!(character.item && character.item.ownSwing)
   readonly property bool packOwnsFall: !!(character.item && character.item.ownFall)
+  // Room a pack draws above its 64 x 80 box (hats, standing up to walk), in
+  // grid units: her window keeps that much space above her.
+  readonly property real headroom: character.item && Number(character.item.headroom) > 0
+    ? Math.min(40, Number(character.item.headroom)) : 0
+
+  // Walking along an edge to the next window (Perch moves her; a pack can
+  // show a walk). `walkDir`: -1 left, 1 right.
+  property bool walking: false
+  property int walkDir: 1
+  // A long way: she runs (Perch moves her faster).
+  property bool running: false
+  // Not level with the last window: she jumps there in an arc.
+  property bool jumping: false
 
   // A speech bubble is showing.
   property bool talking: false
@@ -117,7 +130,23 @@ Item {
 
   // 0 at rest, 1 with her right arm up.
   property real waveAmt: 0
-  readonly property bool happy: waveAmt > 0.4 && !startled
+  readonly property bool happy: (waveAmt > 0.4 || patted) && !startled
+
+  // Clicks on her: a pat. `pats` counts the clicks in a quick burst (1.2 s
+  // apart at most), `patCount` goes up with every click, so a pack can react
+  // in `onPatCountChanged`.
+  property bool patted: false
+  property int pats: 0
+  property int patCount: 0
+  function pat() {
+    pats = patBurst.running ? pats + 1 : 1
+    patCount++
+    patBurst.restart()
+    patted = true
+    patEnd.restart()
+  }
+  Timer { id: patBurst; interval: 1200 }
+  Timer { id: patEnd; interval: 900; onTriggered: buddy.patted = false }
 
   // The pointer touched her: a surprised face and a lean the way she goes.
   property bool startled: false
@@ -203,8 +232,23 @@ Item {
     y: buddy.pad * buddy.s
     width: buddy.shown && !buddy.falling ? 40 * buddy.s : 0
     height: buddy.shown && !buddy.falling ? 74 * buddy.s : 0
+    // The pointer resting on her for a moment makes her scoot out of the
+    // way; a click before that is a pat, and she stays.
     HoverHandler {
-      onHoveredChanged: if (hovered) buddy.poked(point.position.x + hitBox.x)
+      id: hover
+      onHoveredChanged: {
+        if (hovered) { pokeDelay.x = point.position.x + hitBox.x; pokeDelay.restart() }
+        else pokeDelay.stop()
+      }
+    }
+    TapHandler {
+      onTapped: { pokeDelay.stop(); buddy.pat() }
+    }
+    Timer {
+      id: pokeDelay
+      property real x: 0
+      interval: 380
+      onTriggered: if (hover.hovered) buddy.poked(x)
     }
   }
 
@@ -297,7 +341,7 @@ Item {
 
     // ---- Swing ropes, behind everything ---------------------------------
     Part {
-      visible: buddy.hanging && !buddy.packOwnsSwing
+      visible: buddy.hanging && !buddy.packOwnsSwing && !buddy.jumping
       fill: "transparent"; stroke: "#c8a27a"; strokeWidth: 1.1
       d: "M 19.1 -7 L 19.1 56.6 M 44.9 -7 L 44.9 56.6"
     }

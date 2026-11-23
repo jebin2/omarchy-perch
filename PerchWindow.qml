@@ -3,16 +3,14 @@ import Quickshell
 import Quickshell.Wayland
 import qs.Commons
 
-// A small transparent layer window that carries Mochi and her speech bubble.
-// It stays mapped and only moves, so Hyprland's layer open/close animations
-// never replay; when there is nothing to sit on she just fades out.
+// A transparent layer window over the whole screen that carries Mochi and her
+// speech bubble. It stays mapped and never moves or resizes: she moves inside
+// it, so every move is smooth and Hyprland's layer animations never replay;
+// when there is nothing to sit on she just fades out.
 //
 // Only her body takes the pointer. When it touches her she scoots along the
 // edge, out of the way, so whatever was under her can be clicked; she drifts
 // back to her corner a few seconds after the pointer has gone.
-//
-// The window grows to the left while a bubble is showing, and downwards
-// while she falls off a window that closed.
 PanelWindow {
   id: win
 
@@ -64,36 +62,100 @@ PanelWindow {
     }
   }
 
+  function walkable() { return win.here && !win.falling && !win.perch.fallPending }
+
   function snapHome() {
+    walkAnim.stop(); walkT = 0; buddy.walking = false; buddy.running = false; buddy.jumping = false
     homeTimer.stop()
     dodgeMs = 0
     dodge = 0
   }
 
-  // Where she is sitting right now, and where she sat before the last focus
-  // change: a window can close just after focus has already moved on.
-  readonly property int liveLeft: Math.max(0, Math.min(Math.round(wantLeft + dodge), screenW - buddy.width))
-  readonly property int liveTop: Math.max(0, wantTop)
+  // Where she is right now, in screen coordinates. Her window covers the
+  // whole screen and never moves or resizes: she moves inside it, so every
+  // move is plain drawing and stays smooth (moving a layer window shows up a
+  // frame late, which made her jump).
+  function clampLeft(v) { return Math.max(0, Math.min(v, screenW - buddy.width)) }
+  readonly property real curLeft: clampLeft(wantLeft + dodge + walkT * walkDX)
+  readonly property real arcLift: buddy.jumping ? jumpHeight * Math.sin(Math.PI * walkT) : 0
+  readonly property real curTop: Math.max(0, wantTop + walkT * walkDY) - arcLift
+  readonly property int liveLeft: Math.round(curLeft)
+  readonly property int liveTop: Math.round(curTop)
   property var prevSeat: null
+
+  // Travelling to the next window instead of popping up there: on a level
+  // edge she walks (runs if it's far; on her swing under the bar the swing
+  // slides along), anywhere else on the screen she jumps there in an arc.
+  // The offset from her new place shrinks from (walkDX, walkDY) to nothing.
+  property real walkDX: 0
+  property real walkDY: 0
+  property real walkT: 0
+  property real jumpHeight: 0
+  // Speeds in px per second, scaled with her size so her feet don't skate.
+  readonly property real walkSpeed: 120 * buddy.s
+  readonly property real runSpeed: 300 * buddy.s
+  readonly property real slideSpeed: 340  // the swing under the bar
+  readonly property real runFrom: 600     // px
+  NumberAnimation {
+    id: walkAnim
+    target: win
+    property: "walkT"
+    from: 1
+    to: 0
+    onFinished: { buddy.walking = false; buddy.running = false; buddy.jumping = false; buddy.wave() }
+  }
+
+  function maybeWalk(from) {
+    if (!from || falling || !win.here || !buddy.motion || win.perch.sleeping) return false
+    homeTimer.stop(); dodgeMs = 0; dodge = 0
+    var newLeft = clampLeft(wantLeft)
+    // Keep her seat where it was: the swing adds a little padding on top.
+    var padFrom = from.hanging ? 7 : 0, padTo = hanging ? 7 : 0
+    var dx = from.left - newLeft
+    var dy = from.top - Math.max(0, wantTop) + (padFrom - padTo) * buddy.s
+    if (Math.abs(dx) < 4 && Math.abs(dy) < 4) return false
+    var level = from.hanging === hanging && Math.abs(dy) <= 80
+    var dist = Math.sqrt(dx * dx + dy * dy)
+    walkAnim.stop()
+    walkDX = dx
+    walkDY = dy
+    walkT = 1
+    if (level) {
+      var run = !hanging && Math.abs(dx) >= runFrom
+      var speed = hanging ? slideSpeed : run ? runSpeed : walkSpeed
+      walkAnim.duration = Math.max(400, Math.min(5000, Math.abs(dx) / speed * 1000))
+      buddy.running = run
+      buddy.jumping = false
+    } else {
+      jumpHeight = Math.min(160, 30 * buddy.s + 0.18 * dist)
+      walkAnim.duration = Math.max(450, Math.min(1100, 350 + 0.45 * dist))
+      buddy.running = false
+      buddy.jumping = true
+    }
+    buddy.walkDir = dx < 0 ? 1 : -1
+    buddy.walking = true
+    walkAnim.start()
+    return true
+  }
 
   property bool falling: false
   property int fallLeft: 0
   property int fallTop: 0
 
-  readonly property real bubbleSpace: bubble.active ? bubble.width + 2 : 0
-  readonly property real fallSpace: falling ? 100 * buddy.s : 0
-
   anchors.top: true
   anchors.left: true
-  margins.left: here ? Math.max(0, (falling ? fallLeft : liveLeft) - bubbleSpace) : 0
-  margins.top: here ? (falling ? fallTop : liveTop) : 0
-
-  implicitWidth: Math.ceil(bubbleSpace + buddy.width)
-  implicitHeight: Math.ceil(Math.max(buddy.height, bubble.active ? bubble.y + bubble.height : 0) + fallSpace)
+  anchors.right: true
+  anchors.bottom: true
 
   color: "transparent"
   exclusionMode: ExclusionMode.Ignore
-  mask: Region { item: buddy.hitBox }
+  // Only her body takes the pointer: the mask is her hit box, wherever she is.
+  mask: Region {
+    x: Math.round(buddy.x + buddy.hitBox.x)
+    y: Math.round(buddy.y + buddy.hitBox.y)
+    width: Math.round(buddy.hitBox.width)
+    height: Math.round(buddy.hitBox.height)
+  }
   WlrLayershell.namespace: "jebin2-perch"
   WlrLayershell.layer: WlrLayer.Top
   WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
@@ -102,7 +164,10 @@ PanelWindow {
     target: win.perch
 
     function onLeaving() {
-      win.prevSeat = win.here && !win.falling ? { left: win.liveLeft, top: win.liveTop, at: Date.now() } : null
+      win.prevSeat = win.here && !win.falling ? { left: win.liveLeft, top: win.liveTop, hanging: win.hanging, at: Date.now() } : null
+      // The new window's place is known right after this signal.
+      var from = win.walkable() ? win.prevSeat : null
+      if (from) Qt.callLater(function() { win.maybeWalk(from) })
     }
 
     function onFell(current) {
@@ -110,6 +175,7 @@ PanelWindow {
         ? (win.perch.hasWindow && win.onThisScreen ? { left: win.liveLeft, top: win.liveTop } : null)
         : (win.prevSeat && Date.now() - win.prevSeat.at < 1500 ? win.prevSeat : null)
       if (!seat) return
+      walkAnim.stop(); win.walkT = 0; buddy.walking = false; buddy.running = false; buddy.jumping = false
       bubble.dismiss()
       win.fallLeft = seat.left
       win.fallTop = seat.top
@@ -119,6 +185,7 @@ PanelWindow {
     }
 
     function onArrived() {
+      if (buddy.walking) return
       win.snapHome()
       if (win.perch.hasWindow && win.onThisScreen) buddy.arrive()
       else bubble.dismiss()
@@ -148,13 +215,14 @@ PanelWindow {
 
   Bubble {
     id: bubble
-    x: win.bubbleSpace - width + 2
-    y: Math.round((buddy.pad + 6) * buddy.s)
+    x: buddy.x - width + 2
+    y: buddy.y + Math.round((buddy.pad + 6) * buddy.s)
   }
 
   Buddy {
     id: buddy
-    x: win.bubbleSpace
+    x: win.falling ? win.fallLeft : win.curLeft
+    y: win.falling ? win.fallTop : win.curTop
     s: win.perch.size
     shown: win.here
     sleeping: win.perch.sleeping

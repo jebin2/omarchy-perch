@@ -23,7 +23,9 @@ She shows up on the focused window. Nothing else to set up.
 - **Swings from the window's top border** on windows that touch the bar (the
   usual tiled case). There is no room above those, so she hangs inside the
   corner on a little swing instead of covering the bar.
-- **Waves** when you switch to another window.
+- **Travels** to the window you switch to, then waves: along a level edge
+  she **walks** (runs if it's far; on her swing under the bar the swing
+  slides along), and anywhere else on the screen she **jumps** there.
 - **Talks** in comic speech bubbles (see below).
 - **Yawns** a few seconds before she naps, then **naps** after 90 seconds
   without keyboard or mouse input: eyes closed, a sleep bubble and a few z's.
@@ -31,15 +33,18 @@ She shows up on the focused window. Nothing else to set up.
   up and watches with you. When you come back she **stretches** and says hi.
 - **Falls off** when the window she sits on closes ("waah!"), and pops up on
   the next one.
-- **Gets out of the way:** when the pointer touches her, she scoots along
-  the edge away from it, looking surprised, so you can click whatever was
-  under her (a tab, a button, a bar icon). She drifts back to her corner a
-  few seconds after the pointer has gone.
+- **Gets out of the way:** when the pointer rests on her for a moment, she
+  scoots along the edge away from it, looking surprised, so you can click
+  whatever was under her (a tab, a button, a bar icon). She drifts back to
+  her corner a few seconds after the pointer has gone.
+- **Likes a pat:** click her before she scoots and she smiles, and stays put
+  for more.
 - **Hides** on fullscreen windows.
 - Her hoodie follows your theme's accent color.
 
-Only her body takes the pointer; the rest of her little window, bubble
-included, lets clicks through.
+Her window is a transparent layer over the whole screen that never moves,
+so all her motion is smooth. Only her body takes the pointer; everything
+else, bubble included, lets clicks through.
 
 ## Bar icon
 

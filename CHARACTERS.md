@@ -70,6 +70,8 @@ Bind your pieces' rotations and visibility to these; Perch animates them.
 | `app` | The class of the window she sits on (`kitty`, `spotify`, `discord`…), or empty: show a pose for the app |
 | `action`, `actionCount` | A move asked for with `act <name>` that Perch doesn't do itself (e.g. `act cheer`), and a counter that goes up every time: react in `onActionCountChanged` |
 | `calm`, `sleeping` | Between leg-swinging bursts; napping |
+| `walking`, `walkDir`, `running`, `jumping` | Travelling to the next window (`-1` left, `1` right): along a level edge she walks, `running` on long trips (600 px or more), on the swing (`hanging`) the swing slides; `jumping` when the next window isn't level: she flies there in an arc |
+| `patted`, `pats`, `patCount` | A click on her: `patted` for a moment, `pats` = clicks in the current quick burst, `patCount` goes up with every click: react in `onPatCountChanged` |
 | `startled`, `startleDir` | The pointer touched her; she scoots left (`-1`) or right (`1`) |
 | `waveAmt`, `yawnAmt`, `stretchAmt` | 0..1 while she waves, yawns or stretches |
 | `fallT`, `falling` | 0..1 while she falls off a closed window |
@@ -84,6 +86,7 @@ A pack can also set, on its root item:
 |---|---|
 | `ownSwing` | `true` while it draws its own swing ropes, so Perch hides its own |
 | `ownFall` | `true` if it has its own falling frames: Perch then only drops and fades her, without tipping her over |
+| `headroom` | Grid units the pack draws above its box (a hat, standing up to walk), up to 40: Perch keeps that much room above her. Keep it constant |
 
 Sprite packs (frames of drawn poses instead of moving parts) use these: a
 timer picks the frame for the current state from the values above.
