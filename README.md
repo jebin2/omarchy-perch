@@ -96,7 +96,7 @@ Perch adds a small kiwi icon to the bar. Click it for a panel to:
 | Getting to the next window | `winMove`: **`run`** (in any direction, up and down too; on her swing under the bar the swing slides), `jump` (always, when there's room above her), or `fly` (her broom for anything but short trips; she also flies in to say hello) | |
 | Sky trips (a broom loop over the screen now and then) | `winSky`, **off** | part of `deskFly` |
 | Fly on her broom | | `deskFly`, on |
-| Reactions (loud volume, mute, full brightness, notifications) | `winSenses`, on | `deskSenses`, on |
+| Reactions (volume and brightness up/down, mute, screenshots, notifications) | `winSenses`, on | `deskSenses`, on |
 | Break reminders | `winBreaks`, on | |
 | Come to the empty workspace | | `deskShow`, on |
 | Weather and seasons (rain, snow, leaves, petals, fireflies, shooting stars) | | `deskAir`, on |
@@ -113,6 +113,16 @@ From a script or a key binding: `omarchy-shell jebin2.perch set size 1.2`
 (also `character <name>`, `shown true|false`, `talk true|false`, and any
 switch above, like `set winSky true` or `set winMove fly`), and
 `omarchy-shell jebin2.perch toggle` to hide or show her.
+
+### Be in your screenshots
+
+She notices Omarchy screenshots and poses afterwards. To have her pose *in*
+the shot, put this in `~/.config/hypr/bindings.lua` (she gets 0.8 s to strike
+the pose, then the screenshot tool starts as usual):
+
+```lua
+o.rebind("PRINT", "Screenshot", "sh -c 'omarchy-shell -q jebin2.perch selfie; sleep 0.8; exec omarchy-capture-screenshot'")
+```
 
 ## What she says
 
@@ -169,6 +179,7 @@ omarchy-shell jebin2.perch act wave      # also: yawn, stretch, think, fall
 omarchy-shell jebin2.perch focus 25      # a focus timer, in minutes; `focus 0` stops it
 omarchy-shell jebin2.perch note "call mom at 6"   # a sticky note on the desktop; she holds it up at 6
 omarchy-shell jebin2.perch notes         # list them; `unnote 2` or `unnote all` takes them down
+omarchy-shell jebin2.perch selfie        # she strikes a selfie pose (see below)
 ```
 
 Other names (lowercase letters, digits, `-`, `_`) go to the character pack,

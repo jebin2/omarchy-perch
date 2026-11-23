@@ -82,7 +82,7 @@ Bind your pieces' rotations and visibility to these; Perch animates them.
 | `desktopProps` (on the pack's root) | Things to draw on the desktop floor: `[{ source, x (0..1), w, h }]`, sizes in grid units (a plant, a lamp...). Optional: `id`, `mirror`, `lift` (grid units up), `front` (in front of her), `speed` (glides to a new `x` at that many grid units a second: a pet), `tap` (clickable, see `propTapped`). Keep the list the same length while it shows, so moving things glide |
 | `propTapped(id)` | A `tap: true` prop was clicked |
 | `welcomed(kind)` | She came in from off screen: `"login"`, `"resume"` or `"back"`. Broom packs: fired while she hovers in the middle of the screen (6.5 s, `flying` stays true) before she flies to her place; others: when she lands |
-| `sensed(kind, app)` | She noticed `"loud"`, `"mute"`, `"bright"` or `"notify"` (`app` = the app's name). Set `senses: true` on the pack's root to react yourself; otherwise Perch says a line |
+| `sensed(kind, app)` | She noticed something: `"volup"` / `"voldown"` (volume turned up or down), `"loud"` (to 100%), `"mute"`, `"brighter"` / `"dimmer"`, `"bright"` (to full), `"selfie"` (you took a screenshot) or `"notify"` (`app` = the app's name). One per burst of key presses. Set `senses: true` on the pack's root to react yourself; otherwise Perch says a line |
 | `weather` (on the pack's root) | `"rain"` or `"snow"`: Perch lets it fall across the empty workspace |
 | `stay` (on the pack's root) | `true` while she's busy at something on the desktop: she doesn't wander off |
 | `moves` (on the pack's root) | `[{ "id": "dance", "label": "Dance" }, …]`: extra buttons in the panel's "Make her…"; each sends that id as an `act` (see `action`) |

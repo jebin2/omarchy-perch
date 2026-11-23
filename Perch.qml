@@ -490,18 +490,29 @@ Item {
   PwObjectTracker { objects: root.sink ? [root.sink] : [] }
   readonly property real volume: sink && sink.audio ? sink.audio.volume : 0
   readonly property bool muted: !!(sink && sink.audio && sink.audio.muted)
-  property bool wasLoud: true      // nothing on startup
+  // She reacts on the first key press of a burst (right away), then not
+  // again until the keys stop: "volup" / "voldown", "loud" at 100%.
+  property real volPrev: -1           // the level before this change
+  property bool volBurst: false
   onVolumeChanged: {
-    var loud = volume >= 0.995
-    if (loud && !wasLoud) senseOnce("loud", "", 60000)
-    wasLoud = loud
+    var before = volPrev
+    volPrev = volume
+    if (!settled || before < 0 || muted || Math.abs(volume - before) < 0.003) return  // nothing on startup
+    if (!volBurst) senseOnce(volume >= 0.995 ? "loud" : volume > before ? "volup" : "voldown", "", 2500)
+    else if (volume >= 0.995 && before < 0.995) senseOnce("loud", "", 2500)
+    volBurst = true
+    volSettle.restart()
   }
-  onMutedChanged: if (muted) senseOnce("mute", "", 60000)
+  Timer { id: volSettle; interval: 900; onTriggered: root.volBurst = false }
+  onMutedChanged: if (muted) senseOnce("mute", "", 2500)
 
-  // Brightness: the first backlight in /sys, read every 2 s while she's up.
+  // Brightness: the first backlight in /sys (no change events there), read
+  // every 0.3 s while she's up: "brighter" / "dimmer", "bright" at full,
+  // on the first step of a burst like the volume.
   property string backlight: ""
   property real brightMax: 0
-  property bool wasBright: true
+  property real brightLast: -1
+  property bool brightBurst: false
   Process {
     command: ["sh", "-c", "for d in /sys/class/backlight/*; do [ -r \"$d/brightness\" ] && echo \"$d\" && cat \"$d/max_brightness\" && break; done"]
     running: true
@@ -517,13 +528,19 @@ Item {
     path: root.backlight ? root.backlight + "/brightness" : ""
     printErrors: false
     onLoaded: {
-      var bright = root.brightMax > 0 && Number(text()) / root.brightMax >= 0.99
-      if (bright && !root.wasBright) root.senseOnce("bright", "", 60000)
-      root.wasBright = bright
+      if (root.brightMax <= 0) return
+      var level = Number(text()) / root.brightMax, before = root.brightLast
+      root.brightLast = level
+      if (before < 0 || Math.abs(level - before) < 0.001 || !root.settled) return
+      if (!root.brightBurst) root.senseOnce(level >= 0.99 ? "bright" : level > before ? "brighter" : "dimmer", "", 2500)
+      else if (level >= 0.99 && before < 0.99) root.senseOnce("bright", "", 2500)
+      root.brightBurst = true
+      brightSettle.restart()
     }
   }
+  Timer { id: brightSettle; interval: 1200; onTriggered: root.brightBurst = false }
   Timer {
-    interval: 2000
+    interval: 300
     repeat: true
     running: root.backlight !== "" && root.shown && !root.sleeping
     onTriggered: brightFile.reload()
@@ -532,6 +549,7 @@ Item {
   // Notifications: listen on the session bus for Notify calls (the app name
   // only). Not while Do Not Disturb is on.
   property bool dnd: false
+  property real selfieAt: 0     // the last `selfie` call (the shot's own notice then stays quiet)
   FileView {
     path: Quickshell.env("HOME") + "/.local/state/omarchy/notifications/quiet.json"
     watchChanges: true
@@ -550,7 +568,10 @@ Item {
         if (root.notifyArg !== 0) return
         var m = /^\s*string "(.*)"\s*$/.exec(line)
         root.notifyArg = -1
-        if (!m || root.dnd) return
+        if (!m) return
+        // Omarchy's screenshot tool announces each shot: a selfie, not a ping.
+        if (/^omasnap$/i.test(m[1])) { if (Date.now() - root.selfieAt > 60000) root.senseOnce("selfie", "", 4000); return }
+        if (root.dnd) return
         var app = m[1].replace(/\.desktop$/, "").replace(/^.*\./, "").replace(/[-_]+/g, " ").trim().slice(0, 24)
         if (app) root.senseOnce("notify", app.charAt(0).toUpperCase() + app.slice(1), 20000)
       }
@@ -928,6 +949,11 @@ Item {
       if (!line) return
       root.showSign(line)
     }
+
+    // `selfie`: she strikes a selfie pose now. Bind your screenshot key to
+    // `omarchy-shell -q jebin2.perch selfie; sleep 0.8; omarchy-capture-screenshot`
+    // and she's in the shot.
+    function selfie(): void { root.selfieAt = Date.now(); root.senseOnce("selfie", "", 0) }
 
     // `note "call mom at 6"` pins a sticky note (a time at the end is
     // optional); `notes` lists them; `unnote 2` / `unnote all` takes down.

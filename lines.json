@@ -336,5 +336,62 @@
     "sassy": [
       "{app} again?"
     ]
+  },
+  "volup": {
+    "fun": [
+      "turn it up! 🎵",
+      "ooh, I like this one 🎶"
+    ],
+    "serious": [
+      "volume up."
+    ],
+    "sassy": [
+      "louder? bold."
+    ]
+  },
+  "voldown": {
+    "fun": [
+      "shh, a bit quieter 🤫"
+    ],
+    "serious": [
+      "volume down."
+    ],
+    "sassy": [
+      "thank you."
+    ]
+  },
+  "brighter": {
+    "fun": [
+      "sunshine! ☀️"
+    ],
+    "serious": [
+      "brighter."
+    ],
+    "sassy": [
+      "I can see everything now."
+    ]
+  },
+  "dimmer": {
+    "fun": [
+      "cozy mode 😴"
+    ],
+    "serious": [
+      "dimmer. easy on the eyes."
+    ],
+    "sassy": [
+      "mood lighting?"
+    ]
+  },
+  "selfie": {
+    "fun": [
+      "cheese! 📸",
+      "did you get my good side? ✌️"
+    ],
+    "serious": [
+      "screenshot taken."
+    ],
+    "sassy": [
+      "was I in it?"
+    ]
   }
 }
