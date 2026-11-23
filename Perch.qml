@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Services.Mpris
+import Quickshell.Services.Pipewire
 import Quickshell.Services.UPower
 import Quickshell.Wayland
 import qs.Commons
@@ -368,6 +369,8 @@ Item {
     wakeTalk.entry = longNap ? timeEntry() : lines.wake
     wakeTalk.topic = longNap ? timeKey() : "wake"
     wakeTalk.restart()
+    // Back after a long time away (the screen was locked): she flies in.
+    if (longNap) entrance("back")
   }
   Timer {
     id: wakeTalk
@@ -398,6 +401,112 @@ Item {
     interval: 2400
     onTriggered: { var l = root.pickLine(root.lines["break"]); if (l) root.showSign(l) }
   }
+
+  // ---- Her entrance ----------------------------------------------------------
+  // At login, after the laptop wakes up, and when you're back after a long
+  // time away, she comes in from off screen: on her broom if her pack has
+  // one, else with a big jump. `kind`: "login", "resume" or "back".
+  signal entrance(string kind)
+  Timer { interval: 3500; running: true; onTriggered: root.entrance("login") }
+  // A suspend shows up as a gap in time: this ticks every 5 s.
+  property double lastTick: Date.now()
+  Timer {
+    interval: 5000
+    repeat: true
+    running: true
+    onTriggered: {
+      var now = Date.now()
+      if (now - root.lastTick > 60000) root.entrance("resume")
+      root.lastTick = now
+    }
+  }
+
+  // ---- What she notices: loud sound, mute, a too-bright screen, notifications
+  // `sense(kind)`: "loud" (volume at 100% or more), "mute", "bright"
+  // (brightness at max), "notify" (a notification came in; `app` is the app
+  // name, never its text). Once a minute per kind (notifications: 20 s).
+  signal sense(string kind, string app)
+  property var lastSense: ({})
+  function senseOnce(kind, app, gapMs) {
+    if (!settled || !shown || meeting || focusing || sleeping) return
+    var now = Date.now()
+    if (now - (lastSense[kind] || 0) < gapMs) return
+    var o = lastSense; o[kind] = now; lastSense = o
+    sense(kind, app || "")
+  }
+
+  readonly property var sink: Pipewire.defaultAudioSink
+  PwObjectTracker { objects: root.sink ? [root.sink] : [] }
+  readonly property real volume: sink && sink.audio ? sink.audio.volume : 0
+  readonly property bool muted: !!(sink && sink.audio && sink.audio.muted)
+  property bool wasLoud: true      // nothing on startup
+  onVolumeChanged: {
+    var loud = volume >= 0.995
+    if (loud && !wasLoud) senseOnce("loud", "", 60000)
+    wasLoud = loud
+  }
+  onMutedChanged: if (muted) senseOnce("mute", "", 60000)
+
+  // Brightness: the first backlight in /sys, read every 2 s while she's up.
+  property string backlight: ""
+  property real brightMax: 0
+  property bool wasBright: true
+  Process {
+    command: ["sh", "-c", "for d in /sys/class/backlight/*; do [ -r \"$d/brightness\" ] && echo \"$d\" && cat \"$d/max_brightness\" && break; done"]
+    running: true
+    stdout: StdioCollector {
+      onStreamFinished: {
+        var l = text.trim().split("\n")
+        if (l.length === 2 && Number(l[1]) > 0) { root.brightMax = Number(l[1]); root.backlight = l[0] }
+      }
+    }
+  }
+  FileView {
+    id: brightFile
+    path: root.backlight ? root.backlight + "/brightness" : ""
+    printErrors: false
+    onLoaded: {
+      var bright = root.brightMax > 0 && Number(text()) / root.brightMax >= 0.99
+      if (bright && !root.wasBright) root.senseOnce("bright", "", 60000)
+      root.wasBright = bright
+    }
+  }
+  Timer {
+    interval: 2000
+    repeat: true
+    running: root.backlight !== "" && root.shown && !root.sleeping
+    onTriggered: brightFile.reload()
+  }
+
+  // Notifications: listen on the session bus for Notify calls (the app name
+  // only). Not while Do Not Disturb is on.
+  property bool dnd: false
+  FileView {
+    path: Quickshell.env("HOME") + "/.local/state/omarchy/notifications/quiet.json"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: { try { root.dnd = !!JSON.parse(text()).dnd } catch (e) {} }
+  }
+  property int notifyArg: -1
+  Process {
+    id: notifyWatch
+    command: ["dbus-monitor", "--session", "type='method_call',interface='org.freedesktop.Notifications',member='Notify'"]
+    running: root.shown
+    stdout: SplitParser {
+      onRead: function(line) {
+        if (line.indexOf("member=Notify") >= 0) { root.notifyArg = 0; return }
+        if (root.notifyArg !== 0) return
+        var m = /^\s*string "(.*)"\s*$/.exec(line)
+        root.notifyArg = -1
+        if (!m || root.dnd) return
+        var app = m[1].replace(/\.desktop$/, "").replace(/^.*\./, "").replace(/[-_]+/g, " ").trim().slice(0, 24)
+        if (app) root.senseOnce("notify", app.charAt(0).toUpperCase() + app.slice(1), 20000)
+      }
+    }
+    onExited: if (root.shown) notifyRestart.restart()
+  }
+  Timer { id: notifyRestart; interval: 10000; onTriggered: notifyWatch.running = true }
 
   // ---- Focus timer: `omarchy-shell jebin2.perch focus 25` ---------------------
   // While it runs she stays put and keeps quiet; at the end she stretches and

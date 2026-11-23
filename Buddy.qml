@@ -72,6 +72,13 @@ Item {
   property bool focusing: false
   property int focusLeft: 0
   signal focusStarted(int minutes)
+  // She came in from off screen (login, waking the laptop, back after a long
+  // time away) and just landed: "login", "resume" or "back".
+  signal welcomed(string kind)
+  // Things she notices: "loud", "mute", "bright", "notify" (with the app's
+  // name). A pack with `senses: true` reacts itself; others get a line.
+  signal sensed(string kind, string app)
+  readonly property bool packSenses: !!(character.item && character.item.senses)
   signal focusDone(int minutes)
   // Room a pack draws above its 64 x 80 box (hats, standing up to walk), in
   // grid units: her window keeps that much space above her.

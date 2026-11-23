@@ -292,6 +292,7 @@ PanelWindow {
   function clampLeft(v) { return Math.max(0, Math.min(v, screenW - buddy.width)) }
   readonly property real curLeft: buddy.dragging ? dragBaseLeft + buddy.dragOffset.x
     : landing ? dropLeft
+    : entering ? wantLeft + walkT * walkDX
     : clampLeft(wantLeft + dodge + walkT * walkDX) + settleDX
   readonly property real arcLift: buddy.jumping || buddy.flying
     ? jumpHeight * Math.sin(Math.PI * walkT) + (buddy.flying ? 5 * buddy.s * Math.sin(walkT * flyWaves * Math.PI * 2) : 0) : 0
@@ -322,7 +323,12 @@ PanelWindow {
     property: "walkT"
     from: 1
     to: 0
-    onFinished: { var flew = buddy.flying; buddy.walking = false; buddy.running = false; buddy.jumping = false; buddy.flying = false; if (!win.onDesktop && !flew) buddy.wave() }
+    onFinished: {
+      var flew = buddy.flying
+      buddy.walking = false; buddy.running = false; buddy.jumping = false; buddy.flying = false
+      if (win.entering) { win.entering = false; buddy.welcomed(win.enterKind); return }
+      if (!win.onDesktop && !flew) buddy.wave()
+    }
   }
 
   function maybeWalk(from) {
@@ -391,6 +397,19 @@ PanelWindow {
     }
   }
   property rect tapRect: Qt.rect(0, 0, 0, 0)
+
+  // Her entrance: from off screen, high up, to where she belongs.
+  property bool entering: false
+  property string enterKind: ""
+  function enter(kind) {
+    if (!here || buddy.dragging || pin || falling || buddy.walking) return
+    if (!((perch.hasWindow && onThisScreen) || onDesktop)) return
+    var right = Math.random() < 0.5
+    var from = { left: right ? screenW + 30 : -buddy.width - 30, top: screenH * 0.3, hanging: false }
+    enterKind = kind
+    entering = true
+    if (!maybeWalk(from)) entering = false
+  }
   WlrLayershell.namespace: "jebin2-perch"
   WlrLayershell.layer: WlrLayer.Top
   WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
@@ -445,6 +464,14 @@ PanelWindow {
     }
 
     function onFocusStarted(minutes) { buddy.focusStarted(minutes) }
+    function onEntrance(kind) { win.enter(kind) }
+    function onSense(kind, app) {
+      if (!((win.perch.hasWindow && win.onThisScreen) || win.onDesktop)) return
+      buddy.sensed(kind, app)
+      if (buddy.packSenses) return
+      var l = win.perch.pickLine(win.perch.lines[kind])
+      if (l) win.perch.speakLine(l.replace("{app}", app), true, kind, "")
+    }
     function onFocusDone(minutes) { buddy.focusDone(minutes) }
 
     function onShowSign(text) {

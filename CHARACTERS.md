@@ -77,6 +77,8 @@ Bind your pieces' rotations and visibility to these; Perch animates them.
 | `deskX`, `goTo(x)` | On the desktop: where she is across the screen (0..1), and `buddy.goTo(0.1)` sends her walking there |
 | `desktopProps` (on the pack's root) | Things to draw on the desktop floor: `[{ source, x (0..1), w, h }]`, sizes in grid units (a plant, a lamp...). Optional: `id`, `mirror`, `lift` (grid units up), `front` (in front of her), `speed` (glides to a new `x` at that many grid units a second: a pet), `tap` (clickable, see `propTapped`). Keep the list the same length while it shows, so moving things glide |
 | `propTapped(id)` | A `tap: true` prop was clicked |
+| `welcomed(kind)` | She just flew (or jumped) in from off screen: `"login"`, `"resume"` or `"back"` |
+| `sensed(kind, app)` | She noticed `"loud"`, `"mute"`, `"bright"` or `"notify"` (`app` = the app's name). Set `senses: true` on the pack's root to react yourself; otherwise Perch says a line |
 | `weather` (on the pack's root) | `"rain"` or `"snow"`: Perch lets it fall across the empty workspace |
 | `stay` (on the pack's root) | `true` while she's busy at something on the desktop: she doesn't wander off |
 | `focusing`, `focusLeft`, `focusStarted(min)`, `focusDone(min)` | The focus timer runs (seconds left): Perch keeps her quiet and in place; a pack can show a calm pose |

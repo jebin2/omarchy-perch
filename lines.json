@@ -1,122 +1,340 @@
 {
   "app": {
     "foot|alacritty|kitty|ghostty|wezterm|konsole|terminal": {
-      "fun": ["sudo make me a sandwich 🥪", "type faster, I'm watching 👀", "ooh, green text time"],
-      "serious": ["commit early, commit often", "read it twice, run it once"],
-      "sassy": ["rm -rf? not on my watch", "another terminal? bold."]
+      "fun": [
+        "sudo make me a sandwich 🥪",
+        "type faster, I'm watching 👀",
+        "ooh, green text time"
+      ],
+      "serious": [
+        "commit early, commit often",
+        "read it twice, run it once"
+      ],
+      "sassy": [
+        "rm -rf? not on my watch",
+        "another terminal? bold."
+      ]
     },
     "brave|chrom|firefox|zen|librewolf|browser": {
-      "fun": ["one more tab won't hurt", "ooh, the internet! 🌐"],
-      "serious": ["bookmark it, then close it", "tabs eat memory, just saying"],
-      "sassy": ["that's like 40 tabs", "\"research\", sure 🙃"]
+      "fun": [
+        "one more tab won't hurt",
+        "ooh, the internet! 🌐"
+      ],
+      "serious": [
+        "bookmark it, then close it",
+        "tabs eat memory, just saying"
+      ],
+      "sassy": [
+        "that's like 40 tabs",
+        "\"research\", sure 🙃"
+      ]
     },
     "code|cursor|zed|nvim|neovim|jetbrains|idea|emacs|omawrite|typora|obsidian": {
-      "fun": ["ship it! 🚀", "it works on my machine ✨"],
-      "serious": ["small steps, then test", "good names save hours"],
-      "sassy": ["bug or feature? 🐛", "comments are nice, you know"]
+      "fun": [
+        "ship it! 🚀",
+        "it works on my machine ✨"
+      ],
+      "serious": [
+        "small steps, then test",
+        "good names save hours"
+      ],
+      "sassy": [
+        "bug or feature? 🐛",
+        "comments are nice, you know"
+      ]
     },
     "spotify|mpv|vlc|celluloid|youtube|music": {
-      "fun": ["♪ la la la ♪", "turn it up! 🎶"],
-      "serious": ["volume check: protect those ears"],
-      "sassy": ["your playlist, your rules… I guess"]
+      "fun": [
+        "♪ la la la ♪",
+        "turn it up! 🎶"
+      ],
+      "serious": [
+        "volume check: protect those ears"
+      ],
+      "sassy": [
+        "your playlist, your rules… I guess"
+      ]
     },
     "discord|telegram|signal|slack|whatsapp|element|vesktop": {
-      "fun": ["say hi from me! 👋"],
-      "serious": ["replying later is okay too"],
-      "sassy": ["gossip time? 👀"]
+      "fun": [
+        "say hi from me! 👋"
+      ],
+      "serious": [
+        "replying later is okay too"
+      ],
+      "sassy": [
+        "gossip time? 👀"
+      ]
     },
     "steam|lutris|heroic|wine|gamescope|igi": {
-      "fun": ["game time!! let's go 🎮"],
-      "serious": ["one round, then a break?"],
-      "sassy": ["\"just one more game\""]
+      "fun": [
+        "game time!! let's go 🎮"
+      ],
+      "serious": [
+        "one round, then a break?"
+      ],
+      "sassy": [
+        "\"just one more game\""
+      ]
     },
     "nautilus|thunar|dolphin|files": {
-      "fun": ["so many folders…"],
-      "serious": ["tidy files, tidy mind"],
-      "sassy": ["lost something again?"]
+      "fun": [
+        "so many folders…"
+      ],
+      "serious": [
+        "tidy files, tidy mind"
+      ],
+      "sassy": [
+        "lost something again?"
+      ]
     }
   },
   "time": {
     "morning": {
-      "fun": ["good morning! ☀️", "morning! ready to go?"],
-      "serious": ["morning! water first 💧"],
-      "sassy": ["up early… or still up late?"]
+      "fun": [
+        "good morning! ☀️",
+        "morning! ready to go?"
+      ],
+      "serious": [
+        "morning! water first 💧"
+      ],
+      "sassy": [
+        "up early… or still up late?"
+      ]
     },
     "noon": {
-      "fun": ["lunch time? 🍜"],
-      "serious": ["eat something real, okay?"],
-      "sassy": ["I'd eat, if I could. you can."]
+      "fun": [
+        "lunch time? 🍜"
+      ],
+      "serious": [
+        "eat something real, okay?"
+      ],
+      "sassy": [
+        "I'd eat, if I could. you can."
+      ]
     },
     "afternoon": {
-      "fun": ["afternoon snack? 🍪"],
-      "serious": ["afternoon slump? short walk!"],
-      "sassy": ["coffee number three, huh ☕"]
+      "fun": [
+        "afternoon snack? 🍪"
+      ],
+      "serious": [
+        "afternoon slump? short walk!"
+      ],
+      "sassy": [
+        "coffee number three, huh ☕"
+      ]
     },
     "evening": {
-      "fun": ["evening already! 🌆"],
-      "serious": ["wrap up soon?"],
-      "sassy": ["overtime again?"]
+      "fun": [
+        "evening already! 🌆"
+      ],
+      "serious": [
+        "wrap up soon?"
+      ],
+      "sassy": [
+        "overtime again?"
+      ]
     },
     "night": {
-      "fun": ["it's getting late… 🌙"],
-      "serious": ["screens off soon, sleep is good"],
-      "sassy": ["bedtime was a suggestion, I see"]
+      "fun": [
+        "it's getting late… 🌙"
+      ],
+      "serious": [
+        "screens off soon, sleep is good"
+      ],
+      "sassy": [
+        "bedtime was a suggestion, I see"
+      ]
     },
     "latenight": {
-      "fun": ["…why are we still awake 🦉"],
-      "serious": ["it's really late. go to bed."],
-      "sassy": ["even the owls went home"]
+      "fun": [
+        "…why are we still awake 🦉"
+      ],
+      "serious": [
+        "it's really late. go to bed."
+      ],
+      "sassy": [
+        "even the owls went home"
+      ]
     }
   },
   "chatter": {
-    "fun": ["*hums*", "I like this corner", "swing, swing, swing~", "do windows have feelings?", "hehe"],
-    "serious": ["posture check!", "blink a few times, eyes need it", "deep breath in… and out", "drink some water 💧"],
-    "sassy": ["I could do this faster", "are we working or what?", "I see you. 👀", "nice cursor work. I guess."]
+    "fun": [
+      "*hums*",
+      "I like this corner",
+      "swing, swing, swing~",
+      "do windows have feelings?",
+      "hehe"
+    ],
+    "serious": [
+      "posture check!",
+      "blink a few times, eyes need it",
+      "deep breath in… and out",
+      "drink some water 💧"
+    ],
+    "sassy": [
+      "I could do this faster",
+      "are we working or what?",
+      "I see you. 👀",
+      "nice cursor work. I guess."
+    ]
   },
   "battery_low": {
-    "fun": ["I'm hungry… charger? 🔋"],
-    "serious": ["battery's low, plug in soon"],
-    "sassy": ["feed me or we both nap"]
+    "fun": [
+      "I'm hungry… charger? 🔋"
+    ],
+    "serious": [
+      "battery's low, plug in soon"
+    ],
+    "sassy": [
+      "feed me or we both nap"
+    ]
   },
   "charging": {
-    "fun": ["nom nom ⚡", "yum, power!"],
-    "serious": ["charging, thanks!"],
-    "sassy": ["finally, food"]
+    "fun": [
+      "nom nom ⚡",
+      "yum, power!"
+    ],
+    "serious": [
+      "charging, thanks!"
+    ],
+    "sassy": [
+      "finally, food"
+    ]
   },
   "unplugged": {
-    "fun": ["off the leash! 🏃‍♀️"],
-    "serious": ["on battery now, go easy"],
-    "sassy": ["living dangerously"]
+    "fun": [
+      "off the leash! 🏃‍♀️"
+    ],
+    "serious": [
+      "on battery now, go easy"
+    ],
+    "sassy": [
+      "living dangerously"
+    ]
   },
   "window_closed": {
-    "fun": ["waah! 😵", "whoops!"],
-    "serious": ["oof. found a new spot."],
-    "sassy": ["hey! I was sitting there"]
+    "fun": [
+      "waah! 😵",
+      "whoops!"
+    ],
+    "serious": [
+      "oof. found a new spot."
+    ],
+    "sassy": [
+      "hey! I was sitting there"
+    ]
   },
   "theme": {
-    "fun": ["new outfit! ✨", "ooh, I like this color"],
-    "serious": ["fresh look!"],
-    "sassy": ["do I look good? I look good."]
+    "fun": [
+      "new outfit! ✨",
+      "ooh, I like this color"
+    ],
+    "serious": [
+      "fresh look!"
+    ],
+    "sassy": [
+      "do I look good? I look good."
+    ]
   },
   "focus_start": {
-    "fun": ["focus mode · {min} min 🎧", "{min} min. go go go!"],
-    "serious": ["focus · {min} min"],
-    "sassy": ["{min} min. no tabs. I'm watching."]
+    "fun": [
+      "focus mode · {min} min 🎧",
+      "{min} min. go go go!"
+    ],
+    "serious": [
+      "focus · {min} min"
+    ],
+    "sassy": [
+      "{min} min. no tabs. I'm watching."
+    ]
   },
   "focus_done": {
-    "fun": ["done! break time 🌸", "you did it! stretch 🙆"],
-    "serious": ["time's up. take 5."],
-    "sassy": ["timer's done. so are you. break."]
+    "fun": [
+      "done! break time 🌸",
+      "you did it! stretch 🙆"
+    ],
+    "serious": [
+      "time's up. take 5."
+    ],
+    "sassy": [
+      "timer's done. so are you. break."
+    ]
   },
   "break": {
-    "fun": ["stretch with me! ~", "wiggle your toes 🦶"],
-    "serious": ["an hour in. stand up and stretch?", "water break? 💧"],
-    "sassy": ["your chair can survive without you. stand up."]
+    "fun": [
+      "stretch with me! ~",
+      "wiggle your toes 🦶"
+    ],
+    "serious": [
+      "an hour in. stand up and stretch?",
+      "water break? 💧"
+    ],
+    "sassy": [
+      "your chair can survive without you. stand up."
+    ]
   },
   "wake": {
-    "fun": ["oh! you're back 👋", "*stretches* hi again"],
-    "serious": ["welcome back"],
-    "sassy": ["took you long enough"]
+    "fun": [
+      "oh! you're back 👋",
+      "*stretches* hi again"
+    ],
+    "serious": [
+      "welcome back"
+    ],
+    "sassy": [
+      "took you long enough"
+    ]
   },
-  "yawn": ["*yaaawn*", "*yawn*… so sleepy"]
+  "yawn": [
+    "*yaaawn*",
+    "*yawn*… so sleepy"
+  ],
+  "loud": {
+    "fun": [
+      "my ears!! 🙉",
+      "LOUD. love it. ow."
+    ],
+    "serious": [
+      "that's very loud. careful with your ears."
+    ],
+    "sassy": [
+      "are we deaf now?"
+    ]
+  },
+  "mute": {
+    "fun": [
+      "shhh 🤫"
+    ],
+    "serious": [
+      "muted."
+    ],
+    "sassy": [
+      "finally, silence."
+    ]
+  },
+  "bright": {
+    "fun": [
+      "so bright! 😎",
+      "my eyes ☀"
+    ],
+    "serious": [
+      "full brightness. easy on the eyes."
+    ],
+    "sassy": [
+      "is that the sun?"
+    ]
+  },
+  "notify": {
+    "fun": [
+      "📩 {app}!",
+      "ooh, {app} 👀"
+    ],
+    "serious": [
+      "{app} wants you."
+    ],
+    "sassy": [
+      "{app} again?"
+    ]
+  }
 }
