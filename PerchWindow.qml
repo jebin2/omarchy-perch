@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Particles
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -631,89 +630,42 @@ PanelWindow {
   }
 
   // Rain or snow across the empty workspace, when her pack says it's
-  // falling outside. Nothing exists (or runs) otherwise.
-  Loader {
-    anchors.fill: parent
-    active: win.onDesktop && buddy.weather !== "" && !win.perch.sleeping
-    sourceComponent: Item {
-      id: weatherSky
-      readonly property bool rain: buddy.weather === "rain"
-      ParticleSystem { id: sky }
-      ImageParticle {
-        system: sky
-        source: weatherSky.rain ? "sky/rain.png" : "sky/snow.png"
-        opacity: weatherSky.rain ? 0.55 : 0.8
-      }
-      Emitter {
-        system: sky
-        x: -width * 0.05; y: -30; width: win.screenW * 1.1; height: 1
-        emitRate: (weatherSky.rain ? 90 : 26) * (win.perch.onBattery ? 0.5 : 1)
-        lifeSpan: weatherSky.rain ? Math.round(win.screenH / 0.95) : Math.round(win.screenH / 0.055)
-        size: weatherSky.rain ? 30 : 9
-        sizeVariation: weatherSky.rain ? 8 : 5
-        velocity: PointDirection {
-          x: weatherSky.rain ? -40 : 0; xVariation: weatherSky.rain ? 10 : 12
-          y: weatherSky.rain ? 950 : 55; yVariation: weatherSky.rain ? 120 : 20
-        }
-      }
-      Wander {
-        system: sky
-        enabled: !weatherSky.rain
-        xVariance: 40; pace: 40
-      }
-    }
-  }
-
-  // Little things drifting about the desktop: leaves, petals, snowflakes,
-  // fireflies by the camp. Only while she's on the desktop and you're here.
+  // falling outside; leaves, petals or snowflakes drifting; fireflies by
+  // the camp. Only on the desktop while you're here (Drift.qml: a few
+  // images on one slow timer, not a 60 fps particle system).
   function ambientHas(kind) {
     var l = buddy.ambient
     for (var i = 0; i < l.length; i++) if (l[i] === kind || (l[i] && l[i].kind === kind)) return l[i]
     return null
   }
+  readonly property bool airOn: onDesktop && !perch.sleeping
   Loader {
     anchors.fill: parent
-    active: win.onDesktop && buddy.ambient.length > 0 && !win.perch.sleeping
-    sourceComponent: Item {
-      id: amb
-      readonly property string drift: win.ambientHas("leaves") ? "leaf" : win.ambientHas("petals") ? "petal" : win.ambientHas("snowflakes") ? "snow" : ""
-      readonly property var flies: win.ambientHas("fireflies")
-      ParticleSystem { id: ambSys }
-      ImageParticle {
-        system: ambSys; groups: ["drift"]
-        source: amb.drift ? "sky/" + amb.drift + ".png" : "sky/snow.png"
-        rotationVariation: amb.drift === "snow" ? 0 : 180
-        rotationVelocityVariation: amb.drift === "snow" ? 0 : 70
-        opacity: 0.85
-      }
-      Emitter {
-        system: ambSys; group: "drift"
-        enabled: amb.drift !== ""
-        x: -40; y: -30; width: win.screenW + 80; height: 1
-        emitRate: amb.drift === "snow" ? 4 : 0.7
-        lifeSpan: Math.round(win.screenH / 0.05)
-        size: amb.drift === "snow" ? 8 : 15
-        sizeVariation: amb.drift === "snow" ? 4 : 5
-        velocity: PointDirection { x: 14; xVariation: 22; y: 52; yVariation: 14 }
-      }
-      Wander { system: ambSys; groups: ["drift"]; xVariance: 70; pace: 30 }
-      ImageParticle {
-        system: ambSys; groups: ["fly"]
-        source: "sky/firefly.png"
-        entryEffect: ImageParticle.Fade
-        alphaVariation: 0.4
-      }
-      Emitter {
-        system: ambSys; group: "fly"
-        enabled: !!amb.flies
-        x: (amb.flies ? Number(amb.flies.x || 0.85) : 0.85) * win.screenW - 220
-        y: win.screenH - 280; width: 440; height: 240
-        emitRate: 2.4
-        lifeSpan: 5000; lifeSpanVariation: 2000
-        size: 11; sizeVariation: 6
-        velocity: AngleDirection { angleVariation: 360; magnitude: 12; magnitudeVariation: 8 }
-      }
-      Wander { system: ambSys; groups: ["fly"]; xVariance: 45; yVariance: 45; pace: 35 }
+    active: win.airOn && buddy.weather !== ""
+    sourceComponent: Drift {
+      kind: buddy.weather === "rain" ? "rain" : "snow"
+      count: (buddy.weather === "rain" ? 70 : 55) * (win.perch.onBattery ? 0.5 : 1)
+    }
+  }
+  readonly property string driftKind: ambientHas("leaves") ? "leaf" : ambientHas("petals") ? "petal"
+    : ambientHas("snowflakes") && buddy.weather !== "snow" ? "snow" : ""
+  Loader {
+    anchors.fill: parent
+    active: win.airOn && win.driftKind !== ""
+    sourceComponent: Drift {
+      kind: win.driftKind
+      count: (win.driftKind === "snow" ? 40 : 14) * (win.perch.onBattery ? 0.5 : 1)
+    }
+  }
+  readonly property var fireflies: ambientHas("fireflies")
+  Loader {
+    anchors.fill: parent
+    active: win.airOn && win.fireflies !== null
+    sourceComponent: Drift {
+      kind: "firefly"
+      count: 12
+      originX: (win.fireflies ? Number(win.fireflies.x || 0.85) : 0.85) * win.screenW
+      originY: win.screenH - 20
     }
   }
 
@@ -759,23 +711,30 @@ PanelWindow {
   }
 
   // Soap bubbles from her wand (the pack says where, while she blows).
+  // The layer stays a few seconds after she lowers the wand, so the last
+  // bubbles float away instead of vanishing.
+  property bool bubbling: false
+  property var bubbleFrom: null
+  Connections {
+    target: buddy
+    function onBubbleAtChanged() {
+      if (buddy.bubbleAt === null) { bubbleLinger.restart(); return }
+      win.bubbleFrom = buddy.bubbleAt
+      win.bubbling = true
+      bubbleLinger.stop()
+    }
+  }
+  Timer { id: bubbleLinger; interval: 5000; onTriggered: win.bubbling = false }
   Loader {
     anchors.fill: parent
-    active: win.onDesktop && buddy.bubbleAt !== null
-    sourceComponent: Item {
-      ParticleSystem { id: bubSys }
-      ImageParticle { system: bubSys; source: "sky/bubble.png"; entryEffect: ImageParticle.Scale }
-      Emitter {
-        system: bubSys
-        x: buddy.x + (buddy.bubbleAt ? buddy.bubbleAt[0] : 0) * buddy.s
-        y: buddy.y + (buddy.pad + (buddy.bubbleAt ? buddy.bubbleAt[1] : 0)) * buddy.s
-        width: 4; height: 4
-        emitRate: 2.6
-        lifeSpan: 3400; lifeSpanVariation: 1200
-        size: 12 + 8 * buddy.s; sizeVariation: 8
-        velocity: PointDirection { x: 26; xVariation: 26; y: -44; yVariation: 16 }
-      }
-      Wander { system: bubSys; xVariance: 30; pace: 45 }
+    active: win.onDesktop && win.bubbling
+    sourceComponent: Drift {
+      kind: "bubble"
+      count: 9
+      emitting: buddy.bubbleAt !== null
+      scaleBy: 0.6 + 0.4 * buddy.s
+      originX: buddy.x + (win.bubbleFrom ? win.bubbleFrom[0] : 0) * buddy.s
+      originY: buddy.y + (buddy.pad + (win.bubbleFrom ? win.bubbleFrom[1] : 0)) * buddy.s
     }
   }
 
