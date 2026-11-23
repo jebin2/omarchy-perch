@@ -22,6 +22,12 @@ Item {
   readonly property bool motion: Style.duration(1000) > 0
   readonly property real tau: Math.PI * 2
 
+  // Each body part is drawn once into its own texture (at 2.5x, so it stays
+  // sharp after scaling) and then only moved: redrawing ~40 shapes on every
+  // frame cost about three times as much.
+  readonly property bool cache: true
+  readonly property real tex: 2.5
+
   width: 64 * s
   height: (80 + pad) * s
 
@@ -35,12 +41,32 @@ Item {
   readonly property color blush: "#ff9db4"
   readonly property color tie: "#ff7aa2"
 
-  // 30 updates a second is plenty for her (10 while she naps) and keeps the
-  // shell light; a free-running animation would redraw her at the screen's
-  // full rate.
+  // She fidgets in bursts: a few seconds of leg swinging, then a few calm
+  // seconds of just breathing. Each redraw costs the shell about a
+  // millisecond, so she updates 25 times a second while swinging and 10 while
+  // calm or asleep; a free-running animation would redraw her at the
+  // screen's full rate.
+  property bool calm: false
+  // On battery she sits still for longer between bursts.
+  property bool thrifty: false
+  Timer {
+    interval: 8000
+    repeat: true
+    running: buddy.shown && buddy.motion && !buddy.sleeping
+    onTriggered: {
+      buddy.calm = !buddy.calm
+      interval = buddy.calm
+        ? (buddy.thrifty ? 10000 + Math.random() * 8000 : 4000 + Math.random() * 6000)
+        : (buddy.thrifty ? 3000 + Math.random() * 3000 : 5000 + Math.random() * 7000)
+    }
+  }
+  property real legEnergy: calm || sleeping ? 0 : 1
+  Behavior on legEnergy { NumberAnimation { duration: Style.duration(700); easing.type: Easing.InOutSine } }
+  readonly property bool lively: legEnergy > 0.02
+
   property real t: 0
   Timer {
-    interval: buddy.sleeping ? 100 : 33
+    interval: buddy.lively ? 40 : 100
     repeat: true
     running: buddy.shown && buddy.motion
     onTriggered: buddy.t = (buddy.t + interval / 1000) % 12
@@ -76,6 +102,55 @@ Item {
     NumberAnimation { target: buddy; property: "lean"; to: 0; duration: Style.duration(380); easing.type: Easing.InOutSine }
   }
 
+  // Yawn (just before a nap), stretch (waking up), fall (her window closed).
+  property real yawnAmt: 0
+  property real stretchAmt: 0
+  property real fallT: 0
+  readonly property bool falling: fallT > 0
+
+  function yawn() {
+    if (!motion || !shown || sleeping) return
+    yawnAnim.restart()
+  }
+  function stretch() {
+    if (!motion || !shown) { wave(); return }
+    waveAnim.stop(); waveAmt = 0
+    stretchAnim.restart()
+  }
+  function fall() {
+    waveAnim.stop(); waveAmt = 0
+    stretchAnim.stop(); stretchAmt = 0
+    yawnAnim.stop(); yawnAmt = 0
+    opacity = 1
+    fallAnim.restart()
+  }
+  SequentialAnimation {
+    id: yawnAnim
+    NumberAnimation { target: buddy; property: "yawnAmt"; to: 1; duration: 450; easing.type: Easing.OutCubic }
+    PauseAnimation { duration: 1100 }
+    NumberAnimation { target: buddy; property: "yawnAmt"; to: 0; duration: 450; easing.type: Easing.InOutSine }
+  }
+  SequentialAnimation {
+    id: stretchAnim
+    NumberAnimation { target: buddy; property: "stretchAmt"; to: 1; duration: 500; easing.type: Easing.OutCubic }
+    PauseAnimation { duration: 700 }
+    NumberAnimation { target: buddy; property: "stretchAmt"; to: 0; duration: 350; easing.type: Easing.InOutSine }
+    ScriptAction { script: buddy.wave() }
+  }
+  SequentialAnimation {
+    id: fallAnim
+    NumberAnimation { target: buddy; property: "fallT"; from: 0; to: 1; duration: 600; easing.type: Easing.Linear }
+    PropertyAction { target: buddy; property: "opacity"; value: 0 }
+    PropertyAction { target: buddy; property: "fallT"; value: 0 }
+  }
+
+  // One expression at a time.
+  readonly property string face: (startled || falling) ? "startled"
+    : yawnAmt > 0.4 ? "yawn"
+    : (stretchAmt > 0.4 || happy) ? "happy"
+    : sleepAmt >= 0.5 ? "sleep"
+    : "normal"
+
   // Only her body takes the pointer; everything else in her window passes
   // through to what's below.
   readonly property alias hitBox: hitBox
@@ -83,8 +158,8 @@ Item {
     id: hitBox
     x: 12 * buddy.s
     y: buddy.pad * buddy.s
-    width: buddy.shown ? 40 * buddy.s : 0
-    height: buddy.shown ? 74 * buddy.s : 0
+    width: buddy.shown && !buddy.falling ? 40 * buddy.s : 0
+    height: buddy.shown && !buddy.falling ? 74 * buddy.s : 0
     HoverHandler {
       onHoveredChanged: if (hovered) buddy.poked(point.position.x + hitBox.x)
     }
@@ -99,7 +174,7 @@ Item {
     appear.restart()
   }
 
-  onSleepingChanged: if (!sleeping && shown) wave()
+  onSleepingChanged: if (!sleeping && shown) stretch()
 
   // Fade in where she lands, then wave.
   opacity: 0
@@ -134,7 +209,7 @@ Item {
     interval: 2600 + Math.random() * 2600
     repeat: true
     running: buddy.shown && buddy.motion && !buddy.sleeping
-    onTriggered: { interval = 2600 + Math.random() * 2600; if (!buddy.happy) blink.restart() }
+    onTriggered: { interval = 2600 + Math.random() * 2600; if (buddy.face === "normal") blink.restart() }
   }
   SequentialAnimation {
     id: blink
@@ -144,13 +219,14 @@ Item {
 
   function wav(period, shift) { return Math.sin(tau * (t - (shift || 0)) / period) }
 
-  readonly property real legL: 17 * energy * wav(0.75)
-  readonly property real legR: 17 * energy * wav(0.75, 0.375)
+  readonly property real legL: 17 * legEnergy * wav(0.75)
+  readonly property real legR: 17 * legEnergy * wav(0.75, 0.375)
   readonly property real headTilt: 2.2 * energy * wav(3) + 9 * sleepAmt
-  readonly property real tailSwing: (5 * wav(3, 0.35) + 1.6 * wav(0.75, 0.1)) * energy + 4 * sleepAmt
+  readonly property real tailSwing: (5 * wav(3, 0.35) + 1.6 * legEnergy * wav(0.75, 0.1)) * energy + 4 * sleepAmt
   readonly property real ahogeSwing: 10 * energy * wav(1.5, 0.2) + 28 * sleepAmt
   readonly property real breathe: 1 + (0.012 + 0.01 * sleepAmt) * wav(3)
-  readonly property real armR: waveAmt * (-112 + 16 * wav(0.5))
+  readonly property real armR: waveAmt * (-112 + 16 * wav(0.5)) - 112 * stretchAmt - 55 * yawnAmt
+  readonly property real armL: 112 * stretchAmt + 25 * yawnAmt
   readonly property real swing: hanging ? 2.4 * (0.35 + 0.65 * energy) * wav(3, 0.5) : 0
 
   Item {
@@ -159,8 +235,11 @@ Item {
     height: buddy.height
     transform: [
       Rotation { origin.x: 32 * buddy.s; origin.y: 0; angle: buddy.swing },
-      Rotation { origin.x: 32 * buddy.s; origin.y: buddy.seatY; angle: buddy.lean }
+      Rotation { origin.x: 32 * buddy.s; origin.y: buddy.seatY; angle: buddy.lean },
+      Rotation { origin.x: 32 * buddy.s; origin.y: buddy.height / 2; angle: 40 * buddy.fallT },
+      Translate { y: 90 * buddy.s * buddy.fallT * buddy.fallT }
     ]
+    opacity: 1 - buddy.fallT * buddy.fallT
 
   Item {
     id: rig
@@ -185,6 +264,7 @@ Item {
         width: 64; height: 80
         transform: Rotation { origin.x: 28 + modelData.x; origin.y: 56; angle: buddy[modelData.angle] }
         Item {
+          layer.enabled: buddy.cache; layer.smooth: true; layer.textureSize: Qt.size(64 * buddy.tex, 80 * buddy.tex)
           x: modelData.x
           width: 64; height: 80
           Part { fill: buddy.skin; d: "M 25.8 55 L 30.2 55 L 30 69 Q 28 70 26 69 Z" }
@@ -205,6 +285,7 @@ Item {
 
     // ---- Body ---------------------------------------------------------
     Item {
+      layer.enabled: buddy.cache; layer.smooth: true; layer.textureSize: Qt.size(64 * buddy.tex, 80 * buddy.tex)
       width: 64; height: 80
       transform: Scale { origin.x: 32; origin.y: 57; yScale: buddy.breathe }
 
@@ -215,10 +296,6 @@ Item {
       Part { fill: "transparent"; stroke: "#fbf7ff"; strokeWidth: 0.8; d: "M 29.4 42.6 L 28.9 47.6 M 34.6 42.6 L 35.1 47.6" }
       Part { fill: "#fbf7ff"; strokeWidth: 0; d: "M 28.1 47.6 A 0.8 0.8 0 1 0 29.7 47.6 A 0.8 0.8 0 1 0 28.1 47.6 Z M 34.3 47.6 A 0.8 0.8 0 1 0 35.9 47.6 A 0.8 0.8 0 1 0 34.3 47.6 Z" }
 
-      // Left arm, hand resting on the edge.
-      Part { fill: "transparent"; stroke: buddy.line; strokeWidth: 6.2; d: "M 24 44 Q 20.6 49 19.2 54.4" }
-      Part { fill: "transparent"; stroke: buddy.hoodie; strokeWidth: 4.6; d: "M 24 44 Q 20.6 49 19.2 54.4" }
-      Part { fill: buddy.skin; d: "M 16.8 55.6 A 2.3 2.3 0 1 0 21.4 55.6 A 2.3 2.3 0 1 0 16.8 55.6 Z" }
     }
 
     // ---- Head ---------------------------------------------------------
@@ -228,73 +305,86 @@ Item {
 
       // Side ponytail.
       Item {
+        layer.enabled: buddy.cache; layer.smooth: true; layer.textureSize: Qt.size(64 * buddy.tex, 80 * buddy.tex)
         width: 64; height: 80
         transform: Rotation { origin.x: 17.5; origin.y: 14; angle: buddy.tailSwing }
         Part { fill: buddy.hair; d: "M 18 13 C 9 14 4 24 5.5 37 C 6 41 8 44 10 46 C 9.5 42 10 39 11.5 36 C 11 40 12 43 14.5 45 C 14 38 15 30 17.5 24 C 18.5 20 19.5 16 18 13 Z" }
         Part { fill: "transparent"; stroke: buddy.hairLight; strokeWidth: 0.9; d: "M 13 20 C 9.5 25 8.5 31 9 37" }
       }
-      Part { fill: buddy.tie; d: "M 15.3 14.2 A 2.2 2.2 0 1 0 19.7 14.2 A 2.2 2.2 0 1 0 15.3 14.2 Z" }
+      // Hair, face and bangs: drawn once into a texture, redrawn only
+      // when her expression changes.
+      Item {
+        width: 64; height: 80
+        layer.enabled: buddy.cache; layer.smooth: true; layer.textureSize: Qt.size(64 * buddy.tex, 80 * buddy.tex)
+        Part { fill: buddy.tie; d: "M 15.3 14.2 A 2.2 2.2 0 1 0 19.7 14.2 A 2.2 2.2 0 1 0 15.3 14.2 Z" }
 
-      Part { fill: buddy.hair; d: "M 13.5 29 C 12 15 21 6.5 32 6.5 C 43 6.5 52 15 50.5 29 C 50.5 34 51 38 50 41 C 48 42.5 46 42 45 39.5 C 44.5 35 44.5 31 44 28 L 20 28 C 19.5 31 19.5 35 19 39.5 C 18 42 16 42.5 14 41 C 13 38 13.5 34 13.5 29 Z" }
-      Part { fill: buddy.skin; d: "M 16 27 C 16 17 23 11 32 11 C 41 11 48 17 48 27 C 48 35 41 41 32 41 C 23 41 16 35 16 27 Z" }
+        Part { fill: buddy.hair; d: "M 13.5 29 C 12 15 21 6.5 32 6.5 C 43 6.5 52 15 50.5 29 C 50.5 34 51 38 50 41 C 48 42.5 46 42 45 39.5 C 44.5 35 44.5 31 44 28 L 20 28 C 19.5 31 19.5 35 19 39.5 C 18 42 16 42.5 14 41 C 13 38 13.5 34 13.5 29 Z" }
+        Part { fill: buddy.skin; d: "M 16 27 C 16 17 23 11 32 11 C 41 11 48 17 48 27 C 48 35 41 41 32 41 C 23 41 16 35 16 27 Z" }
 
-      // Cheeks.
-      Rectangle { x: 19.4; y: 32; width: 5.2; height: 2.6; radius: 1.3; color: buddy.blush; opacity: 0.65 }
-      Rectangle { x: 39.4; y: 32; width: 5.2; height: 2.6; radius: 1.3; color: buddy.blush; opacity: 0.65 }
+        // Cheeks.
+        Rectangle { x: 19.4; y: 32; width: 5.2; height: 2.6; radius: 1.3; color: buddy.blush; opacity: 0.65 }
+        Rectangle { x: 39.4; y: 32; width: 5.2; height: 2.6; radius: 1.3; color: buddy.blush; opacity: 0.65 }
 
-      // Eyes: open, ^ ^ when waving, closed when asleep.
-      Repeater {
-        model: [23.6, 35.6]
-        delegate: Item {
-          required property real modelData
-          x: modelData; y: 25.6
-          width: 4.8; height: 6.6
-          visible: buddy.startled || (!buddy.happy && buddy.sleepAmt < 0.5)
-          transform: Scale { origin.y: 4.2; yScale: buddy.eyeOpen }
-          Rectangle { anchors.fill: parent; radius: 2.4; color: "#2d2347" }
-          Rectangle { x: 0.8; y: 3.4; width: 3.2; height: 2.6; radius: 1.3; color: "#7a68c8" }
-          Rectangle { x: 2.4; y: 0.9; width: 1.7; height: 1.7; radius: 0.85; color: "#ffffff" }
+        // Eyes: open, ^ ^ when waving, closed when asleep.
+        Repeater {
+          model: [23.6, 35.6]
+          delegate: Item {
+            required property real modelData
+            x: modelData; y: 25.6
+            width: 4.8; height: 6.6
+            visible: buddy.face === "normal" || buddy.face === "startled"
+            transform: Scale { origin.y: 4.2; yScale: buddy.eyeOpen }
+            Rectangle { anchors.fill: parent; radius: 2.4; color: "#2d2347" }
+            Rectangle { x: 0.8; y: 3.4; width: 3.2; height: 2.6; radius: 1.3; color: "#7a68c8" }
+            Rectangle { x: 2.4; y: 0.9; width: 1.7; height: 1.7; radius: 0.85; color: "#ffffff" }
+          }
         }
-      }
-      Part {
-        visible: buddy.happy && buddy.sleepAmt < 0.5
-        fill: "transparent"; strokeWidth: 1.2
-        d: "M 23.4 30.2 Q 26 26.8 28.6 30.2 M 35.4 30.2 Q 38 26.8 40.6 30.2"
-      }
-      Part {
-        visible: buddy.sleepAmt >= 0.5
-        fill: "transparent"; strokeWidth: 1.1
-        d: "M 23.4 29.4 Q 26 31.6 28.6 29.4 M 35.4 29.4 Q 38 31.6 40.6 29.4"
-      }
+        Part {
+          visible: buddy.face === "happy"
+          fill: "transparent"; strokeWidth: 1.2
+          d: "M 23.4 30.2 Q 26 26.8 28.6 30.2 M 35.4 30.2 Q 38 26.8 40.6 30.2"
+        }
+        Part {
+          visible: buddy.face === "sleep" || buddy.face === "yawn"
+          fill: "transparent"; strokeWidth: 1.1
+          d: "M 23.4 29.4 Q 26 31.6 28.6 29.4 M 35.4 29.4 Q 38 31.6 40.6 29.4"
+        }
 
-      // Mouth.
-      Part {
-        visible: !buddy.happy && !buddy.startled && buddy.sleepAmt < 0.5
-        fill: "transparent"; strokeWidth: 0.8
-        d: "M 30 34.2 Q 31 35.6 32 34.2 Q 33 35.6 34 34.2"
-      }
-      Part {
-        visible: buddy.happy
-        fill: "#d4566e"; strokeWidth: 0.8
-        d: "M 29.6 33.6 Q 32 38.2 34.4 33.6 Z"
-      }
-      Part {
-        visible: buddy.startled
-        fill: "#d4566e"; strokeWidth: 0.8
-        d: "M 30.6 35 A 1.4 1.7 0 1 0 33.4 35 A 1.4 1.7 0 1 0 30.6 35 Z"
-      }
-      Part {
-        visible: buddy.sleepAmt >= 0.5 && !buddy.startled
-        fill: "#d4566e"; strokeWidth: 0.7
-        d: "M 31.1 34.8 A 0.9 0.8 0 1 0 32.9 34.8 A 0.9 0.8 0 1 0 31.1 34.8 Z"
-      }
+        // Mouth.
+        Part {
+          visible: buddy.face === "normal"
+          fill: "transparent"; strokeWidth: 0.8
+          d: "M 30 34.2 Q 31 35.6 32 34.2 Q 33 35.6 34 34.2"
+        }
+        Part {
+          visible: buddy.face === "happy"
+          fill: "#d4566e"; strokeWidth: 0.8
+          d: "M 29.6 33.6 Q 32 38.2 34.4 33.6 Z"
+        }
+        Part {
+          visible: buddy.face === "startled"
+          fill: "#d4566e"; strokeWidth: 0.8
+          d: "M 30.6 35 A 1.4 1.7 0 1 0 33.4 35 A 1.4 1.7 0 1 0 30.6 35 Z"
+        }
+        Part {
+          visible: buddy.face === "sleep"
+          fill: "#d4566e"; strokeWidth: 0.7
+          d: "M 31.1 34.8 A 0.9 0.8 0 1 0 32.9 34.8 A 0.9 0.8 0 1 0 31.1 34.8 Z"
+        }
+        Part {
+          visible: buddy.face === "yawn"
+          fill: "#b8405a"; strokeWidth: 0.8
+          d: "M 29.8 35.4 A 2.2 2.8 0 1 0 34.2 35.4 A 2.2 2.8 0 1 0 29.8 35.4 Z"
+        }
 
-      // Bangs.
-      Part { fill: buddy.hair; d: "M 15.5 27 C 15.5 15 23 9 32 9 C 41 9 48.5 15 48.5 27 C 46.5 24 45 21 43.5 18.5 C 42.5 22 40 24 36.5 24.5 C 37 22 36.5 19.5 35.5 17.5 C 34 21 30.5 23.5 26.5 23.5 C 27.5 21.5 28 19.5 28 17.5 C 25.5 21 22.5 23 19.5 23.5 C 18 24.5 16.5 25.5 15.5 27 Z" }
-      Part { fill: "transparent"; stroke: buddy.hairLight; strokeWidth: 1; d: "M 22 13.5 C 25 11.6 28 11 31 11" }
+        // Bangs.
+        Part { fill: buddy.hair; d: "M 15.5 27 C 15.5 15 23 9 32 9 C 41 9 48.5 15 48.5 27 C 46.5 24 45 21 43.5 18.5 C 42.5 22 40 24 36.5 24.5 C 37 22 36.5 19.5 35.5 17.5 C 34 21 30.5 23.5 26.5 23.5 C 27.5 21.5 28 19.5 28 17.5 C 25.5 21 22.5 23 19.5 23.5 C 18 24.5 16.5 25.5 15.5 27 Z" }
+        Part { fill: "transparent"; stroke: buddy.hairLight; strokeWidth: 1; d: "M 22 13.5 C 25 11.6 28 11 31 11" }
 
+      }
       // The one hair that never stays down.
       Item {
+        layer.enabled: buddy.cache; layer.smooth: true; layer.textureSize: Qt.size(64 * buddy.tex, 80 * buddy.tex)
         width: 64; height: 80
         transform: Rotation { origin.x: 32.8; origin.y: 9.4; angle: buddy.ahogeSwing }
         Part { fill: buddy.hair; d: "M 32 9.5 C 30.5 5.5 32 2 36.5 1 C 34.5 3 33.5 5.5 33.6 9.5 Z" }
@@ -302,7 +392,7 @@ Item {
 
       // Sleep bubble.
       Rectangle {
-        visible: buddy.sleepAmt > 0.5
+        visible: buddy.face === "sleep"
         readonly property real r: 1.1 + 1.7 * (0.5 + 0.5 * buddy.wav(3))
         x: 35.4 - r; y: 33 - r
         width: 2 * r; height: 2 * r; radius: r
@@ -311,8 +401,19 @@ Item {
       }
     }
 
+    // ---- Left arm: hand on the edge, in front so it shows when raised ---
+    Item {
+      layer.enabled: buddy.cache; layer.smooth: true; layer.textureSize: Qt.size(64 * buddy.tex, 80 * buddy.tex)
+      width: 64; height: 80
+      transform: Rotation { origin.x: 24; origin.y: 44; angle: buddy.armL }
+      Part { fill: "transparent"; stroke: buddy.line; strokeWidth: 6.2; d: "M 24 44 Q 20.6 49 19.2 54.4" }
+      Part { fill: "transparent"; stroke: buddy.hoodie; strokeWidth: 4.6; d: "M 24 44 Q 20.6 49 19.2 54.4" }
+      Part { fill: buddy.skin; d: "M 16.8 55.6 A 2.3 2.3 0 1 0 21.4 55.6 A 2.3 2.3 0 1 0 16.8 55.6 Z" }
+    }
+
     // ---- Right arm: rests, or waves -----------------------------------
     Item {
+      layer.enabled: buddy.cache; layer.smooth: true; layer.textureSize: Qt.size(64 * buddy.tex, 80 * buddy.tex)
       width: 64; height: 80
       transform: Rotation { origin.x: 40; origin.y: 44; angle: buddy.armR }
       Part { fill: "transparent"; stroke: buddy.line; strokeWidth: 6.2; d: "M 40 44 Q 43.4 49 44.8 54.4" }
@@ -326,7 +427,7 @@ Item {
       delegate: Text {
         required property int index
         readonly property real p: ((buddy.t / 2.4) + index / 3) % 1
-        visible: buddy.sleepAmt > 0.5
+        visible: buddy.face === "sleep"
         textFormat: Text.PlainText
         text: "z"
         x: 46 + p * 9 + index
