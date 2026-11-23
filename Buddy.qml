@@ -148,6 +148,8 @@ Item {
   // focused window.
   property bool meeting: false
   property bool music: false
+  // How sassy she is: 0 (sweet) to 0.8 (diva), from the Attitude setting.
+  property real sass: 0.25
   property bool movie: false
   property string windowTitle: ""
 

@@ -12,7 +12,9 @@
       ],
       "sassy": [
         "rm -rf? not on my watch",
-        "another terminal? bold."
+        "another terminal? bold.",
+        "ah yes, the black window of mystery",
+        "typing like you know what you're doing 💅"
       ]
     },
     "brave|chrom|firefox|zen|librewolf|browser": {
@@ -26,7 +28,10 @@
       ],
       "sassy": [
         "that's like 40 tabs",
-        "\"research\", sure 🙃"
+        "\"research\", sure 🙃",
+        "\"just one tab\" 🙄",
+        "research, sure. totally research.",
+        "close a tab. any tab. please."
       ]
     },
     "code|cursor|zed|nvim|neovim|jetbrains|idea|emacs|omawrite|typora|obsidian": {
@@ -40,7 +45,10 @@
       ],
       "sassy": [
         "bug or feature? 🐛",
-        "comments are nice, you know"
+        "comments are nice, you know",
+        "it works on your machine, I'm sure",
+        "that bug? that's a feature now",
+        "commit message: \"fix\". iconic."
       ]
     },
     "spotify|mpv|vlc|celluloid|youtube|music": {
@@ -52,7 +60,9 @@
         "volume check: protect those ears"
       ],
       "sassy": [
-        "your playlist, your rules… I guess"
+        "your playlist, your rules… I guess",
+        "this song again? okay…",
+        "your playlist says a lot about you"
       ]
     },
     "discord|telegram|signal|slack|whatsapp|element|vesktop": {
@@ -63,7 +73,9 @@
         "replying later is okay too"
       ],
       "sassy": [
-        "gossip time? 👀"
+        "gossip time? 👀",
+        "gossip time? spill 👀",
+        "they can wait. I can't."
       ]
     },
     "steam|lutris|heroic|wine|gamescope|igi": {
@@ -74,7 +86,9 @@
         "one round, then a break?"
       ],
       "sassy": [
-        "\"just one more game\""
+        "\"just one more game\"",
+        "\"just one game\". sure.",
+        "I've seen you play. good luck 😏"
       ]
     },
     "nautilus|thunar|dolphin|files": {
@@ -85,7 +99,9 @@
         "tidy files, tidy mind"
       ],
       "sassy": [
-        "lost something again?"
+        "lost something again?",
+        "lost something? shocking.",
+        "that Downloads folder is a crime scene"
       ]
     }
   },
@@ -99,7 +115,9 @@
         "morning! water first 💧"
       ],
       "sassy": [
-        "up early… or still up late?"
+        "up early… or still up late?",
+        "coffee first. talk later.",
+        "rise and… ugh, fine, shine"
       ]
     },
     "noon": {
@@ -110,7 +128,9 @@
         "eat something real, okay?"
       ],
       "sassy": [
-        "I'd eat, if I could. you can."
+        "I'd eat, if I could. you can.",
+        "lunch exists, you know",
+        "noon already? what did we even do"
       ]
     },
     "afternoon": {
@@ -121,7 +141,9 @@
         "afternoon slump? short walk!"
       ],
       "sassy": [
-        "coffee number three, huh ☕"
+        "coffee number three, huh ☕",
+        "afternoon slump? I'm judging, gently",
+        "the 3 pm stare. I know it."
       ]
     },
     "evening": {
@@ -132,7 +154,9 @@
         "wrap up soon?"
       ],
       "sassy": [
-        "overtime again?"
+        "overtime again?",
+        "still here? the evening called, it wants you back",
+        "logging off soon, right? RIGHT?"
       ]
     },
     "night": {
@@ -143,7 +167,9 @@
         "screens off soon, sleep is good"
       ],
       "sassy": [
-        "bedtime was a suggestion, I see"
+        "bedtime was a suggestion, I see",
+        "night owl or just stubborn?",
+        "the bed misses you. I don't. kidding."
       ]
     },
     "latenight": {
@@ -154,7 +180,10 @@
         "it's really late. go to bed."
       ],
       "sassy": [
-        "even the owls went home"
+        "even the owls went home",
+        "it's late. even I'm tired of you",
+        "sleep is free, you know",
+        "go to bed. I'm serious. sort of."
       ]
     }
   },
@@ -176,7 +205,15 @@
       "I could do this faster",
       "are we working or what?",
       "I see you. 👀",
-      "nice cursor work. I guess."
+      "nice cursor work. I guess.",
+      "I'm not saying you're procrastinating… but you are 💅",
+      "that tab count is a cry for help",
+      "wow. riveting. 🙄",
+      "is this the plan, or…?",
+      "I'd help, but I'm busy being adorable",
+      "you call that a break? I call it a lifestyle",
+      "*checks nails* oh, you're still here",
+      "bold of you to ignore me"
     ]
   },
   "battery_low": {
@@ -187,7 +224,9 @@
       "battery's low, plug in soon"
     ],
     "sassy": [
-      "feed me or we both nap"
+      "feed me or we both nap",
+      "charger. now. I'm not dying for this",
+      "running on vibes and 10%? brave"
     ]
   },
   "charging": {
@@ -199,7 +238,9 @@
       "charging, thanks!"
     ],
     "sassy": [
-      "finally, food"
+      "finally, food",
+      "finally. was that so hard?",
+      "plugged in. you're welcome."
     ]
   },
   "unplugged": {
@@ -210,7 +251,9 @@
       "on battery now, go easy"
     ],
     "sassy": [
-      "living dangerously"
+      "living dangerously",
+      "oh, we're living dangerously now?",
+      "no charger? okay, adventurer"
     ]
   },
   "window_closed": {
@@ -222,7 +265,10 @@
       "oof. found a new spot."
     ],
     "sassy": [
-      "hey! I was sitting there"
+      "hey! I was sitting there",
+      "rude. I was MID-swing",
+      "you could've warned me 🙄",
+      "and you didn't even say bye"
     ]
   },
   "theme": {
@@ -234,7 +280,10 @@
       "fresh look!"
     ],
     "sassy": [
-      "do I look good? I look good."
+      "do I look good? I look good.",
+      "hmm… we'll see about this one",
+      "new look. same you.",
+      "I liked the last one better. just saying"
     ]
   },
   "focus_start": {
@@ -246,7 +295,10 @@
       "focus · {min} min"
     ],
     "sassy": [
-      "{min} min. no tabs. I'm watching."
+      "{min} min. no tabs. I'm watching.",
+      "focus? you? okay, let's see",
+      "fine, I'll pretend I'm not here",
+      "phone down. I'm watching 👀"
     ]
   },
   "focus_done": {
@@ -258,7 +310,10 @@
       "time's up. take 5."
     ],
     "sassy": [
-      "timer's done. so are you. break."
+      "timer's done. so are you. break.",
+      "look at you, being productive",
+      "done? I'm almost impressed",
+      "okay fine, that was good"
     ]
   },
   "break": {
@@ -271,7 +326,10 @@
       "water break? 💧"
     ],
     "sassy": [
-      "your chair can survive without you. stand up."
+      "your chair can survive without you. stand up.",
+      "your chair misses you less than you think",
+      "up. walk. now. don't argue",
+      "break time, unless you're a robot"
     ]
   },
   "wake": {
@@ -283,7 +341,9 @@
       "welcome back"
     ],
     "sassy": [
-      "took you long enough"
+      "took you long enough",
+      "oh, NOW you're back",
+      "I wasn't waiting. at all."
     ]
   },
   "yawn": [
@@ -299,7 +359,9 @@
       "that's very loud. careful with your ears."
     ],
     "sassy": [
-      "are we deaf now?"
+      "are we deaf now?",
+      "are you deaf or is it a banger?",
+      "my ears! have some mercy"
     ]
   },
   "mute": {
@@ -310,7 +372,9 @@
       "muted."
     ],
     "sassy": [
-      "finally, silence."
+      "finally, silence.",
+      "silence. finally.",
+      "shh yourself"
     ]
   },
   "bright": {
@@ -322,7 +386,9 @@
       "full brightness. easy on the eyes."
     ],
     "sassy": [
-      "is that the sun?"
+      "is that the sun?",
+      "sunglasses, obviously 😎",
+      "I can see your soul at this brightness"
     ]
   },
   "notify": {
@@ -334,7 +400,10 @@
       "{app} wants you."
     ],
     "sassy": [
-      "{app} again?"
+      "{app} again?",
+      "{app} again? they're obsessed with you",
+      "ignore {app}. I'm more interesting",
+      "{app}, {app}, {app}… 🙄"
     ]
   },
   "volup": {
@@ -346,7 +415,9 @@
       "volume up."
     ],
     "sassy": [
-      "louder? bold."
+      "louder? bold.",
+      "okay DJ, calm down",
+      "louder? bold choice"
     ]
   },
   "voldown": {
@@ -357,7 +428,9 @@
       "volume down."
     ],
     "sassy": [
-      "thank you."
+      "thank you.",
+      "thank you. my ears say thanks",
+      "quieter. smart."
     ]
   },
   "brighter": {
@@ -368,7 +441,9 @@
       "brighter."
     ],
     "sassy": [
-      "I can see everything now."
+      "I can see everything now.",
+      "blinding me, I see",
+      "brighter? you're glowing, I'm squinting"
     ]
   },
   "dimmer": {
@@ -379,7 +454,9 @@
       "dimmer. easy on the eyes."
     ],
     "sassy": [
-      "mood lighting?"
+      "mood lighting?",
+      "moody lighting. I like it.",
+      "dim? hiding something?"
     ]
   },
   "selfie": {
@@ -391,7 +468,10 @@
       "screenshot taken."
     ],
     "sassy": [
-      "was I in it?"
+      "was I in it?",
+      "obviously my good side 💅",
+      "tag me 📸",
+      "you're welcome for the cameo"
     ]
   }
 }

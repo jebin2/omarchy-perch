@@ -961,6 +961,7 @@ PanelWindow {
     roaming: win.onDesktop
     deskX: win.screenW > 0 ? (win.curLeft + width / 2) / win.screenW : 0.5
     music: win.perch.music
+    sass: win.perch.sass
     movie: win.perch.movie
     focusing: win.perch.focusing
     games: win.perch.deskGames

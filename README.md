@@ -103,6 +103,11 @@ Perch adds a small kiwi icon to the bar. Click it for a panel to:
 | Games (hide and seek, if her character has it) | | `deskGames`, on |
 | Sticky notes pinned on the desktop | | `deskNotes`, on |
 
+Her **Attitude** (`attitude`) applies everywhere: `sweet` (never sassy),
+**`some`** (a little sass), `lots` (sassy half the time) or `diva` (sassy
+most of the time). Characters that know it also roll their eyes, flip their
+hair and check their nails more the sassier she is.
+
 The panel saves to `~/.config/perch/config.json`, which you can also edit:
 
 ```json

@@ -37,6 +37,7 @@ Panel {
   })
   function opt(key) { return config[key] === undefined ? views[key] : config[key] === true }
   readonly property string shots: config.shots === "hide" ? "hide" : "pose"
+  readonly property string attitude: /^(sweet|some|lots|diva)$/.test(config.attitude) ? config.attitude : "some"
   property string view: "win"
   readonly property string winMove: /^(run|jump|fly)$/.test(String(config.winMove)) ? config.winMove : config.winFly === true ? "fly" : "run"
   readonly property var viewKeys: view === "win"
@@ -270,6 +271,29 @@ Panel {
             step: 0.05
             value: root.size
             onReleased: function(v) { root.set("size", v.toFixed(2)) }
+          }
+        }
+
+        // How sassy she is.
+        Column {
+          width: parent.width
+          spacing: Style.space(6)
+          Text {
+            textFormat: Text.PlainText
+            text: strings.t("attitude")
+            color: Qt.darker(root.bar.foreground, 1.4)
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.caption
+            font.bold: true
+          }
+          ButtonGroup {
+            width: parent.width
+            options: [{ value: "sweet", label: strings.t("attitude.sweet") }, { value: "some", label: strings.t("attitude.some") },
+                      { value: "lots", label: strings.t("attitude.lots") }, { value: "diva", label: strings.t("attitude.diva") }]
+            value: root.attitude
+            foreground: root.bar.foreground
+            fontFamily: root.bar.fontFamily
+            onChanged: function(v) { root.set("attitude", v) }
           }
         }
 

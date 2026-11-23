@@ -89,6 +89,7 @@ Bind your pieces' rotations and visibility to these; Perch animates them.
 | `games` | False when the user turned games off for the empty workspace: don't start one (and end one that's running) |
 | `focusing`, `focusLeft`, `focusStarted(min)`, `focusDone(min)` | The focus timer runs (seconds left): Perch keeps her quiet and in place; a pack can show a calm pose |
 | `meeting` | The mic or camera is in use: Perch keeps her quiet |
+| `sass` | Her Attitude setting, 0 (sweet) to 0.8 (diva): how often to pick sassy poses or signs |
 | `music`, `movie` | A music player is playing; a video player (or a browser on a video site) is playing |
 | `windowTitle` | The focused window's title |
 | `dragging`, `dragOffset` | She's being carried with the pointer (`dragOffset`: how far it has moved, a point) |
