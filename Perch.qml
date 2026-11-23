@@ -535,6 +535,72 @@ Item {
   }
   Timer { id: notifyRestart; interval: 10000; onTriggered: notifyWatch.running = true }
 
+  // ---- Sticky notes: `omarchy-shell jebin2.perch note "call mom at 6"` ---------
+  // Kept in ~/.config/perch/notes.json and pinned on the desktop. A time at
+  // the end ("at 6", "at 6:30pm", "at 18:30", "in 20m", "in 2h") makes her
+  // hold the note up then (or as soon as you're back); then it comes down.
+  readonly property string notesPath: Quickshell.env("HOME") + "/.config/perch/notes.json"
+  property var notes: []
+  FileView {
+    id: notesStore
+    path: root.notesPath
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: {
+      try {
+        var l = JSON.parse(text())
+        root.notes = Array.isArray(l) ? l.filter(function(n) { return n && typeof n.text === "string" && n.text }).slice(0, 20) : []
+      } catch (e) { root.notes = [] }
+    }
+  }
+  function saveNotes(l) { notes = l; notesStore.setText(JSON.stringify(l, null, 1) + "\n") }
+  function parseNote(raw) {
+    var s = String(raw || "").replace(/\s+/g, " ").trim().slice(0, 140), now = new Date(), due = 0, m
+    if ((m = / in (\d{1,3}) ?(m|min|mins|minutes|h|hr|hrs|hour|hours)$/i.exec(s))) {
+      due = now.getTime() + Number(m[1]) * (/^h/i.test(m[2]) ? 3600000 : 60000)
+      s = s.slice(0, m.index)
+    } else if ((m = / (?:at|@) ?(\d{1,2})(?:[:.](\d{2}))? ?(am|pm)?$/i.exec(s))) {
+      var h = Number(m[1]), mi = Number(m[2] || 0), ap = (m[3] || "").toLowerCase(), hours = []
+      if (h <= 23 && mi <= 59) {
+        if (ap) hours = [(h % 12) + (ap === "pm" ? 12 : 0)]
+        else hours = h <= 12 ? [h % 12, h % 12 + 12] : [h]
+        for (var d = 0; d < 2 && !due; d++)
+          for (var i = 0; i < hours.length; i++) {
+            var t = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d, hours[i], mi, 0, 0).getTime()
+            if (t > now.getTime() && (!due || t < due)) due = t
+          }
+        if (due) s = s.slice(0, m.index)
+      }
+    }
+    return { text: s.trim(), due: due }
+  }
+  function addNote(raw) {
+    var n = parseNote(raw)
+    if (!n.text) return
+    var l = notes.slice(); l.push({ id: Date.now(), text: n.text, due: n.due })
+    saveNotes(l.slice(-20))
+    speakLine(n.due ? "noted! \uD83D\uDCDD " + Qt.formatTime(new Date(n.due), "h:mm AP") : "noted! \uD83D\uDCDD", true, "say", "")
+  }
+  function removeNote(id) { saveNotes(notes.filter(function(n) { return n.id !== id })) }
+  Timer {
+    interval: 10000
+    repeat: true
+    running: root.notes.some(function(n) { return Number(n.due) > 0 })
+    onTriggered: {
+      if (root.sleeping || !root.shown || !(root.hasWindow || root.desktop)) return
+      var now = Date.now()
+      for (var i = 0; i < root.notes.length; i++) {
+        var n = root.notes[i]
+        if (Number(n.due) > 0 && Number(n.due) <= now) {
+          root.showSign("\uD83D\uDCDD " + n.text)
+          root.removeNote(n.id)
+          return       // one at a time
+        }
+      }
+    }
+  }
+
   // ---- Focus timer: `omarchy-shell jebin2.perch focus 25` ---------------------
   // While it runs she stays put and keeps quiet; at the end she stretches and
   // holds up a break sign. The end time is kept in a file in the runtime dir
@@ -837,6 +903,20 @@ Item {
       var line = String(text || "").trim().slice(0, 80)
       if (!line) return
       root.showSign(line)
+    }
+
+    // `note "call mom at 6"` pins a sticky note (a time at the end is
+    // optional); `notes` lists them; `unnote 2` / `unnote all` takes down.
+    function note(text: string): void { root.addNote(text) }
+    function notes(): string {
+      return root.notes.map(function(n, i) {
+        return (i + 1) + ". " + n.text + (Number(n.due) > 0 ? "  (" + Qt.formatDateTime(new Date(Number(n.due)), "ddd h:mm AP") + ")" : "")
+      }).join("\n") || "no notes"
+    }
+    function unnote(which: string): void {
+      if (which === "all") { root.saveNotes([]); return }
+      var i = Number(which) - 1
+      if (i >= 0 && i < root.notes.length) root.removeNote(root.notes[i].id)
     }
 
     // `focus 25` starts a focus timer (minutes); `focus 0` stops it.

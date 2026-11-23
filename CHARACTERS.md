@@ -73,6 +73,9 @@ Bind your pieces' rotations and visibility to these; Perch animates them.
 | `walking`, `walkDir`, `running`, `jumping` | Travelling to the next window (`-1` left, `1` right): along a level edge she walks, `running` on long trips (600 px or more), on the swing (`hanging`) the swing slides; `jumping` when the next window isn't level: she flies there in an arc |
 | `roaming` | She's on the desktop of an empty workspace (the bottom of the screen is her floor); only for packs that set `roams: true` on their root |
 | `flying` | On her broom (only packs with `flies: true`): long trips, joyrides and sky trips on the desktop (a loop or two in the sky, a hover, then down somewhere else), the entrance; `walkDir` is the direction |
+| `ambient` (on the pack's root) | Drifting things on the desktop: `"leaves"`, `"petals"`, `"snowflakes"`, `"stars"` (a shooting star now and then: `shootingStar()`), `{ "kind": "fireflies", "x": 0..1 }` |
+| `bubbleAt` (on the pack's root) | `[x, y]` in grid units: soap bubbles float up from there while it's set |
+| `peekSide` | Set `-1`/`1` and she runs to that edge of the desktop and peeks out from it (hide and seek); `0` brings her back. Clicks don't make her scoot while she hides |
 | `skyHover()` | A sky trip's hover just started (a few seconds): a good moment for a little card |
 | `climbing`, `climbDir` | On her ladder from the desktop floor to the bar (`climbs: true`), `1` up, `-1` down; up there she `hanging`s from the bar |
 | `deskX`, `goTo(x)` | On the desktop: where she is across the screen (0..1), and `buddy.goTo(0.1)` sends her walking there |

@@ -65,6 +65,9 @@ She shows up on the focused window. Nothing else to set up.
 - **Notices** things: covers her ears at 100% volume, says "shh" on mute,
   shades her eyes at full brightness, and points at new notifications (the
   app's name only; not during Do Not Disturb, a meeting or a focus timer).
+- **Sticky notes** you add (`note "…"`, optional `at 6`, `at 18:30`, `in 20m`)
+  stay pinned under the bar on the desktop; at that time she holds the note
+  up. Click a note to take it down.
 - **Hides** on fullscreen windows.
 - Her hoodie follows your theme's accent color.
 
@@ -147,6 +150,8 @@ omarchy-shell jebin2.perch say "build passed! 🎉"
 omarchy-shell jebin2.perch sign "DON'T overthink"   # holds it up on a sign if her pack has one, else says it
 omarchy-shell jebin2.perch act wave      # also: yawn, stretch, think, fall
 omarchy-shell jebin2.perch focus 25      # a focus timer, in minutes; `focus 0` stops it
+omarchy-shell jebin2.perch note "call mom at 6"   # a sticky note on the desktop; she holds it up at 6
+omarchy-shell jebin2.perch notes         # list them; `unnote 2` or `unnote all` takes them down
 ```
 
 Other names (lowercase letters, digits, `-`, `_`) go to the character pack,

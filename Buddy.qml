@@ -63,6 +63,17 @@ Item {
   // so moving things glide instead of jumping.
   readonly property var desktopProps: character.item && Array.isArray(character.item.desktopProps) ? character.item.desktopProps : []
   signal propTapped(string id)
+  // Little things drifting around the desktop (pack root `ambient`): a list
+  // of "leaves", "petals", "snowflakes", "stars" (a shooting star now and
+  // then: `shootingStar()` fires) or { "kind": "fireflies", "x": 0..1 }.
+  readonly property var ambient: character.item && Array.isArray(character.item.ambient) ? character.item.ambient : []
+  signal shootingStar()
+  // Soap bubbles float up from this point (grid units, pack root
+  // `bubbleAt: [x, y]`) while it's set.
+  readonly property var bubbleAt: character.item && Array.isArray(character.item.bubbleAt) && character.item.bubbleAt.length === 2 ? character.item.bubbleAt : null
+  // Hide and seek: a pack sets `peekSide` to -1 or 1 and she walks to that
+  // edge of the desktop, mostly off screen, peeking; 0 brings her back.
+  property int peekSide: 0
   // Weather on the desktop: a pack that knows it sets `weather` to "rain" or
   // "snow" and Perch lets it fall across the empty workspace.
   readonly property string weather: character.item && /^(rain|snow)$/.test(String(character.item.weather || "")) ? character.item.weather : ""

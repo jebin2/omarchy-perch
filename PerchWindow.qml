@@ -248,6 +248,7 @@ PanelWindow {
   // `x` is where the pointer came in, in her coordinates: she moves away from
   // it, or the other way when the edge runs out.
   function flee(x) {
+    if (buddy.peekSide !== 0) return     // hiding: a click finds her, the pointer doesn't
     if (onDesktop && (deskSpot === "bar" || buddy.climbing)) { buddy.startle(x < buddy.width / 2 ? 1 : -1); return }
     if (onDesktop) {
       // Along the floor, away from the pointer.
@@ -298,6 +299,7 @@ PanelWindow {
     : buddy.dragging ? dragBaseLeft + buddy.dragOffset.x
     : landing ? dropLeft
     : entering ? wantLeft + walkT * walkDX
+    : onDesktop && peeking ? wantLeft + walkT * walkDX
     : clampLeft(wantLeft + dodge + walkT * walkDX) + settleDX
   readonly property real arcLift: buddy.jumping || buddy.flying
     ? jumpHeight * Math.sin(Math.PI * walkT) + (buddy.flying ? 5 * buddy.s * Math.sin(walkT * flyWaves * Math.PI * 2) : 0) : 0
@@ -401,6 +403,42 @@ PanelWindow {
       width: win.onDesktop ? Math.round(win.tapRect.width) : 0
       height: win.onDesktop ? Math.round(win.tapRect.height) : 0
     }
+    // Sticky notes on the desktop.
+    Region {
+      x: Math.round(noteBoard.x); y: Math.round(noteBoard.y)
+      width: noteBoard.visible ? Math.round(noteBoard.width) : 0
+      height: noteBoard.visible ? Math.round(noteBoard.height + 8) : 0
+    }
+  }
+
+  // Hide and seek: to an edge of the desktop, mostly off screen, and back.
+  readonly property bool peeking: buddy.peekSide !== 0 || peekReturn
+  property bool peekReturn: false
+  Connections {
+    target: buddy
+    function onPeekSideChanged() { win.peekWalk() }
+  }
+  function peekWalk() {
+    if (!onDesktop || enterPhase !== "" || buddy.climbing || deskSpot !== "floor") return
+    var from = curLeft
+    peekReturn = buddy.peekSide === 0
+    roamLeft = buddy.peekSide < 0 ? -buddy.width * 0.45
+      : buddy.peekSide > 0 ? screenW - buddy.width * 0.55
+      : clampLeft(screenW * (0.2 + Math.random() * 0.6))
+    var dx = from - roamLeft
+    if (Math.abs(dx) < 4) { peekReturn = false; return }
+    walkAnim.stop()
+    walkDX = dx; walkDY = 0; walkT = 1
+    walkAnim.duration = Math.max(500, Math.min(4000, Math.abs(dx) / runSpeed * 1000))
+    buddy.running = true
+    buddy.jumping = false
+    buddy.walkDir = dx < 0 ? 1 : -1
+    buddy.walking = true
+    walkAnim.start()
+  }
+  Connections {
+    target: buddy
+    function onWalkingChanged() { if (!buddy.walking) win.peekReturn = false }
   }
   property rect tapRect: Qt.rect(0, 0, 0, 0)
 
@@ -622,6 +660,164 @@ PanelWindow {
         system: sky
         enabled: !weatherSky.rain
         xVariance: 40; pace: 40
+      }
+    }
+  }
+
+  // Little things drifting about the desktop: leaves, petals, snowflakes,
+  // fireflies by the camp. Only while she's on the desktop and you're here.
+  function ambientHas(kind) {
+    var l = buddy.ambient
+    for (var i = 0; i < l.length; i++) if (l[i] === kind || (l[i] && l[i].kind === kind)) return l[i]
+    return null
+  }
+  Loader {
+    anchors.fill: parent
+    active: win.onDesktop && buddy.ambient.length > 0 && !win.perch.sleeping
+    sourceComponent: Item {
+      id: amb
+      readonly property string drift: win.ambientHas("leaves") ? "leaf" : win.ambientHas("petals") ? "petal" : win.ambientHas("snowflakes") ? "snow" : ""
+      readonly property var flies: win.ambientHas("fireflies")
+      ParticleSystem { id: ambSys }
+      ImageParticle {
+        system: ambSys; groups: ["drift"]
+        source: amb.drift ? "sky/" + amb.drift + ".png" : "sky/snow.png"
+        rotationVariation: amb.drift === "snow" ? 0 : 180
+        rotationVelocityVariation: amb.drift === "snow" ? 0 : 70
+        opacity: 0.85
+      }
+      Emitter {
+        system: ambSys; group: "drift"
+        enabled: amb.drift !== ""
+        x: -40; y: -30; width: win.screenW + 80; height: 1
+        emitRate: amb.drift === "snow" ? 4 : 0.7
+        lifeSpan: Math.round(win.screenH / 0.05)
+        size: amb.drift === "snow" ? 8 : 15
+        sizeVariation: amb.drift === "snow" ? 4 : 5
+        velocity: PointDirection { x: 14; xVariation: 22; y: 52; yVariation: 14 }
+      }
+      Wander { system: ambSys; groups: ["drift"]; xVariance: 70; pace: 30 }
+      ImageParticle {
+        system: ambSys; groups: ["fly"]
+        source: "sky/firefly.png"
+        entryEffect: ImageParticle.Fade
+        alphaVariation: 0.4
+      }
+      Emitter {
+        system: ambSys; group: "fly"
+        enabled: !!amb.flies
+        x: (amb.flies ? Number(amb.flies.x || 0.85) : 0.85) * win.screenW - 220
+        y: win.screenH - 280; width: 440; height: 240
+        emitRate: 2.4
+        lifeSpan: 5000; lifeSpanVariation: 2000
+        size: 11; sizeVariation: 6
+        velocity: AngleDirection { angleVariation: 360; magnitude: 12; magnitudeVariation: 8 }
+      }
+      Wander { system: ambSys; groups: ["fly"]; xVariance: 45; yVariance: 45; pace: 35 }
+    }
+  }
+
+  // A shooting star across the night sky now and then ("stars").
+  Timer {
+    interval: 60000
+    repeat: true
+    running: win.onDesktop && !win.perch.sleeping && win.ambientHas("stars") !== null
+    onTriggered: {
+      interval = 120000 + Math.random() * 240000
+      shootingStar.go()
+    }
+  }
+  Rectangle {
+    id: shootingStar
+    visible: starRun.running
+    width: 150; height: 2.5; radius: 1.25
+    rotation: 18
+    transformOrigin: Item.Right
+    gradient: Gradient {
+      orientation: Gradient.Horizontal
+      GradientStop { position: 0; color: "#00ffffff" }
+      GradientStop { position: 1; color: "#ffffffee" }
+    }
+    function go() {
+      x = win.screenW * (0.1 + Math.random() * 0.45)
+      y = win.barTop + 30 + Math.random() * win.screenH * 0.18
+      starX.from = x; starX.to = x + 520
+      starY.from = y; starY.to = y + 170
+      starRun.restart()
+      buddy.shootingStar()
+    }
+    ParallelAnimation {
+      id: starRun
+      NumberAnimation { id: starX; target: shootingStar; property: "x"; duration: 950; easing.type: Easing.InQuad }
+      NumberAnimation { id: starY; target: shootingStar; property: "y"; duration: 950; easing.type: Easing.InQuad }
+      SequentialAnimation {
+        NumberAnimation { target: shootingStar; property: "opacity"; from: 0; to: 1; duration: 200 }
+        PauseAnimation { duration: 450 }
+        NumberAnimation { target: shootingStar; property: "opacity"; to: 0; duration: 300 }
+      }
+    }
+  }
+
+  // Soap bubbles from her wand (the pack says where, while she blows).
+  Loader {
+    anchors.fill: parent
+    active: win.onDesktop && buddy.bubbleAt !== null
+    sourceComponent: Item {
+      ParticleSystem { id: bubSys }
+      ImageParticle { system: bubSys; source: "sky/bubble.png"; entryEffect: ImageParticle.Scale }
+      Emitter {
+        system: bubSys
+        x: buddy.x + (buddy.bubbleAt ? buddy.bubbleAt[0] : 0) * buddy.s
+        y: buddy.y + (buddy.pad + (buddy.bubbleAt ? buddy.bubbleAt[1] : 0)) * buddy.s
+        width: 4; height: 4
+        emitRate: 2.6
+        lifeSpan: 3400; lifeSpanVariation: 1200
+        size: 12 + 8 * buddy.s; sizeVariation: 8
+        velocity: PointDirection { x: 26; xVariation: 26; y: -44; yVariation: 16 }
+      }
+      Wander { system: bubSys; xVariance: 30; pace: 45 }
+    }
+  }
+
+  // Sticky notes (`omarchy-shell jebin2.perch note "call mom at 6"`), pinned
+  // under the bar on the desktop. Click one to take it down.
+  Row {
+    id: noteBoard
+    visible: win.onDesktop && win.perch.notes.length > 0
+    x: 18
+    y: win.barTop + 14
+    spacing: 12
+    Repeater {
+      model: win.perch.notes.slice(0, 8)
+      Item {
+        required property var modelData
+        required property int index
+        width: 132; height: 98
+        rotation: index % 2 ? 2.2 : -1.8
+        Rectangle { x: 3; y: 4; width: parent.width; height: parent.height; radius: 2; color: "#38000000" }
+        Rectangle { anchors.fill: parent; radius: 2; color: "#fff1a6"; border.color: "#d9c15c"; border.width: 1 }
+        Rectangle { width: 44; height: 13; x: parent.width / 2 - 22; y: -6; rotation: -4; color: "#a8ffffff"; border.color: "#30000000"; border.width: 0.5 }
+        Text {
+          x: 9; y: 10; width: parent.width - 18; height: parent.height - (dueText.visible ? 30 : 16)
+          textFormat: Text.PlainText
+          text: modelData.text
+          color: "#3a3220"
+          font.pixelSize: 14
+          font.bold: true
+          wrapMode: Text.WordWrap
+          elide: Text.ElideRight
+        }
+        Text {
+          id: dueText
+          visible: Number(modelData.due) > 0
+          anchors.right: parent.right; anchors.bottom: parent.bottom
+          anchors.rightMargin: 8; anchors.bottomMargin: 5
+          textFormat: Text.PlainText
+          text: visible ? "\u23F0 " + Qt.formatTime(new Date(Number(modelData.due)), "h:mm AP") : ""
+          color: "#7a6a30"
+          font.pixelSize: 11
+        }
+        TapHandler { onTapped: win.perch.removeNote(modelData.id) }
       }
     }
   }
