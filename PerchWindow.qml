@@ -48,7 +48,7 @@ PanelWindow {
     }
   }
   function climb(up) {
-    if (!onDesktop || buddy.walking || buddy.dragging) return
+    if (!onDesktop || buddy.walking || buddy.dragging || enterPhase !== "") return
     if (up) { ladderX = curLeft + buddy.width / 2; ladderUp = true; deskSpot = "floor" }
     var h = Math.max(1, floorTop - barTop)
     climbAnim.stop()
@@ -67,6 +67,7 @@ PanelWindow {
   }
   // A joyride on her broom, along the desktop.
   function flyTo(x) {
+    if (enterPhase !== "") return
     var from = curLeft
     roamLeft = clampLeft(x)
     var dx = from - roamLeft
@@ -83,7 +84,7 @@ PanelWindow {
   Connections {
     target: buddy
     function onWantsToGo(fraction) {
-      if (!win.onDesktop || win.deskSpot !== "floor" || buddy.climbing || buddy.dragging) return
+      if (!win.onDesktop || win.deskSpot !== "floor" || buddy.climbing || buddy.dragging || win.enterPhase !== "") return
       win.roamTo(fraction * win.screenW - buddy.width / 2, false)
     }
   }
@@ -110,18 +111,21 @@ PanelWindow {
     onTriggered: {
       interval = 6000 + Math.random() * 8000
       if (buddy.walking || buddy.dragging || win.perch.sleeping || win.falling || bubble.active || buddy.meeting || buddy.climbing) return
-      if (buddy.focusing || buddy.packStays) return   // she stays put while you focus, or while she's busy
+      if (buddy.focusing || buddy.packStays || win.enterPhase !== "") return   // she stays put while you focus, or while she's busy
       if (buddy.climbing || win.deskSpot === "bar") return
       var r = Math.random()
       var x = Math.random() * (win.screenW - buddy.width)
-      if (r < 0.10 && buddy.packFlies && Math.abs(x - win.curLeft) > 300) win.flyTo(x)
-      else if (r < 0.16 && buddy.packClimbs && win.floorTop - win.barTop > 200) win.climb(true)
+      if (r < 0.13 && buddy.packFlies) win.skyTrip()
+      else if (r < 0.18 && buddy.packFlies && Math.abs(x - win.curLeft) > 300) win.flyTo(x)
+      else if (r < 0.23 && buddy.packClimbs && win.floorTop - win.barTop > 200) win.climb(true)
       else if (r < 0.55 && Math.abs(x - win.curLeft) > 80) win.roamTo(x, false)
     }
   }
   property var floorSeat: null
   onLiveLeftChanged: if (onDesktop && !buddy.walking) floorSeat = { left: liveLeft, top: liveTop, hanging: win.hanging, at: Date.now() }
   onOnDesktopChanged: {
+    // A window came up mid sky trip: she heads there now.
+    if (!onDesktop && enterKind === "sky" && enterPhase !== "") { enterAnim.stop(); endEntrance() }
     if (onDesktop) {
       homeTimer.stop(); dodgeMs = 0; dodge = 0
       leaveLadder()
@@ -290,14 +294,16 @@ PanelWindow {
   // move is plain drawing and stays smooth (moving a layer window shows up a
   // frame late, which made her jump).
   function clampLeft(v) { return Math.max(0, Math.min(v, screenW - buddy.width)) }
-  readonly property real curLeft: buddy.dragging ? dragBaseLeft + buddy.dragOffset.x
+  readonly property real curLeft: enterPhase !== "" ? enterLeft
+    : buddy.dragging ? dragBaseLeft + buddy.dragOffset.x
     : landing ? dropLeft
     : entering ? wantLeft + walkT * walkDX
     : clampLeft(wantLeft + dodge + walkT * walkDX) + settleDX
   readonly property real arcLift: buddy.jumping || buddy.flying
     ? jumpHeight * Math.sin(Math.PI * walkT) + (buddy.flying ? 5 * buddy.s * Math.sin(walkT * flyWaves * Math.PI * 2) : 0) : 0
   property real flyWaves: 3
-  readonly property real curTop: buddy.dragging ? dragBaseTop + buddy.dragOffset.y
+  readonly property real curTop: enterPhase !== "" ? enterTop
+    : buddy.dragging ? dragBaseTop + buddy.dragOffset.y
     : landing ? dropTop
     : Math.max(0, wantTop + walkT * walkDY) - arcLift + settleDY
   readonly property int liveLeft: Math.round(curLeft)
@@ -332,7 +338,7 @@ PanelWindow {
   }
 
   function maybeWalk(from) {
-    if (!from || falling || !win.here || !buddy.motion || win.perch.sleeping) return false
+    if (!from || falling || !win.here || !buddy.motion || win.perch.sleeping || enterPhase !== "") return false
     homeTimer.stop(); dodgeMs = 0; dodge = 0
     var newLeft = clampLeft(wantLeft)
     // Keep her seat where it was: the swing adds a little padding on top.
@@ -402,13 +408,103 @@ PanelWindow {
   property bool entering: false
   property string enterKind: ""
   function enter(kind) {
-    if (!here || buddy.dragging || pin || falling || buddy.walking) return
+    if (!here || buddy.dragging || pin || falling || buddy.walking || enterPhase !== "") return
     if (!((perch.hasWindow && onThisScreen) || onDesktop)) return
     var right = Math.random() < 0.5
-    var from = { left: right ? screenW + 30 : -buddy.width - 30, top: screenH * 0.3, hanging: false }
     enterKind = kind
+    if (buddy.packFlies) {
+      // On her broom: in from the side, a loop in the middle of the screen,
+      // a hover there while she says hello, then off to her place.
+      startFlight(right ? screenW + 30 : -buddy.width - 30, screenH * 0.18,
+                  screenW / 2 - buddy.width / 2, screenH * 0.34 - buddy.height / 2,
+                  Math.min(180, screenW * 0.11), right ? -1 : 1, 1, 6500, 1400)
+      perch.entered()
+      return
+    }
+    var from = { left: right ? screenW + 30 : -buddy.width - 30, top: screenH * 0.3, hanging: false }
     entering = true
-    if (!maybeWalk(from)) entering = false
+    if (!maybeWalk(from)) { entering = false; return }
+    perch.entered()
+  }
+
+  // A sky trip on the desktop: up from the floor, a loop or two somewhere
+  // in the sky, a hover, then down somewhere else on the floor.
+  function skyTrip() {
+    if (!onDesktop || !buddy.packFlies || enterPhase !== "" || buddy.walking || buddy.dragging || buddy.climbing || deskSpot !== "floor") return
+    var r = Math.min(200, screenW * 0.06 + Math.random() * screenW * 0.07)
+    var cx = r + 20 + Math.random() * Math.max(1, screenW - buddy.width - 2 * r - 40)
+    var top = Math.max(barTop + 20, 0) + 0.5 * r
+    var cy = top + Math.random() * Math.max(1, screenH * 0.45 - top)
+    enterKind = "sky"
+    startFlight(curLeft, curTop, cx, cy, r, Math.random() < 0.5 ? -1 : 1, Math.random() < 0.35 ? 2 : 1,
+                2500 + Math.random() * 4500, 1100 + Math.min(1200, Math.abs(cy - curTop) * 1.5))
+  }
+
+  // One broom flight: from (x, y) to the edge of a loop around (cx, cy),
+  // `turns` times round (dir 1 or -1), to its middle, a hover for `hoverMs`,
+  // then `endEntrance()`.
+  function startFlight(x, y, cx, cy, r, dir, turns, hoverMs, inMs) {
+    loopCX = cx; loopCY = cy; loopR = r; loopDir = dir; loopTurns = turns
+    flightHoverMs = hoverMs; flightInMs = inMs
+    // Join the loop on the side she comes from.
+    loopStartA = x > cx ? 0 : Math.PI
+    enterX = x; enterY = y
+    circleA = loopStartA
+    enterPhase = "in"
+    buddy.flying = true
+    buddy.walkDir = cx + (x > cx ? r : -r) > x ? 1 : -1
+    enterAnim.restart()
+  }
+  // The flight: "in", "circle", "center", "hover", or "" when not flying one.
+  property string enterPhase: ""
+  property real enterX: 0
+  property real enterY: 0
+  property real circleA: 0
+  property real bobT: 0
+  property real loopCX: 0
+  property real loopCY: 0
+  property real loopR: 150
+  property int loopDir: 1
+  property int loopTurns: 1
+  property real loopStartA: 0
+  property int flightHoverMs: 6500
+  property int flightInMs: 1400
+  readonly property bool onCircle: enterPhase === "circle"
+  readonly property real enterLeft: onCircle ? loopCX + loopR * Math.cos(circleA) : enterX
+  readonly property real enterTop: (onCircle ? loopCY + 0.5 * loopR * Math.sin(circleA) : enterY)
+    + (enterPhase === "hover" ? 7 * buddy.s * Math.sin(bobT) : 0)
+  // Facing the way she's going round the loop.
+  onCircleAChanged: if (onCircle) { var vx = -Math.sin(circleA) * loopDir; if (Math.abs(vx) > 0.05) buddy.walkDir = vx > 0 ? 1 : -1 }
+  SequentialAnimation {
+    id: enterAnim
+    ParallelAnimation {
+      NumberAnimation { target: win; property: "enterX"; to: win.loopCX + win.loopR * Math.cos(win.loopStartA); duration: win.flightInMs; easing.type: Easing.OutQuad }
+      NumberAnimation { target: win; property: "enterY"; to: win.loopCY; duration: win.flightInMs; easing.type: Easing.InOutSine }
+    }
+    ScriptAction { script: win.enterPhase = "circle" }
+    NumberAnimation {
+      target: win; property: "circleA"; duration: 2300 * win.loopTurns; easing.type: Easing.InOutSine
+      from: win.loopStartA
+      to: win.loopStartA + win.loopDir * 2 * Math.PI * win.loopTurns
+    }
+    ScriptAction { script: { win.enterX = win.loopCX + win.loopR * Math.cos(win.loopStartA); win.enterY = win.loopCY; win.enterPhase = "center" } }
+    ParallelAnimation {
+      NumberAnimation { target: win; property: "enterX"; to: win.loopCX; duration: 700; easing.type: Easing.OutCubic }
+      NumberAnimation { target: win; property: "enterY"; to: win.loopCY - 10; duration: 700; easing.type: Easing.OutCubic }
+    }
+    ScriptAction { script: { win.enterPhase = "hover"; if (win.enterKind === "sky") buddy.skyHover(); else buddy.welcomed(win.enterKind) } }
+    PauseAnimation { duration: win.flightHoverMs }
+    ScriptAction { script: win.endEntrance() }
+  }
+  NumberAnimation on bobT { from: 0; to: 2 * Math.PI; duration: 1600; loops: Animation.Infinite; running: win.enterPhase === "hover" }
+  function endEntrance() {
+    var from = { left: enterLeft, top: enterTop, hanging: false }
+    enterPhase = ""
+    buddy.flying = false
+    // From a sky trip she lands somewhere new on the floor.
+    if (enterKind === "sky" && onDesktop) roamLeft = clampLeft(Math.random() * (screenW - buddy.width))
+    enterKind = ""
+    if (!maybeWalk(from)) return
   }
   WlrLayershell.namespace: "jebin2-perch"
   WlrLayershell.layer: WlrLayer.Top
@@ -632,7 +728,7 @@ PanelWindow {
     app: win.perch.hasWindow && win.onThisScreen && win.perch.info && typeof win.perch.info.class === "string"
       ? win.perch.info.class : ""
     characterUrl: win.perch.characterUrl
-    hanging: win.perch.hasWindow && win.onThisScreen && win.hanging
+    hanging: win.perch.hasWindow && win.onThisScreen && win.hanging && win.enterPhase === ""
     onPoked: function(x) { win.flee(x) }
     onWantsToSay: function(line, topic) { win.perch.speakLine(line, true, topic, "") }
     meeting: win.perch.meeting

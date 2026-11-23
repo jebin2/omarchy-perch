@@ -72,12 +72,13 @@ Bind your pieces' rotations and visibility to these; Perch animates them.
 | `calm`, `sleeping` | Between leg-swinging bursts; napping |
 | `walking`, `walkDir`, `running`, `jumping` | Travelling to the next window (`-1` left, `1` right): along a level edge she walks, `running` on long trips (600 px or more), on the swing (`hanging`) the swing slides; `jumping` when the next window isn't level: she flies there in an arc |
 | `roaming` | She's on the desktop of an empty workspace (the bottom of the screen is her floor); only for packs that set `roams: true` on their root |
-| `flying` | On her broom (only packs with `flies: true`): long trips, joyrides on the desktop; `walkDir` is the direction |
+| `flying` | On her broom (only packs with `flies: true`): long trips, joyrides and sky trips on the desktop (a loop or two in the sky, a hover, then down somewhere else), the entrance; `walkDir` is the direction |
+| `skyHover()` | A sky trip's hover just started (a few seconds): a good moment for a little card |
 | `climbing`, `climbDir` | On her ladder from the desktop floor to the bar (`climbs: true`), `1` up, `-1` down; up there she `hanging`s from the bar |
 | `deskX`, `goTo(x)` | On the desktop: where she is across the screen (0..1), and `buddy.goTo(0.1)` sends her walking there |
 | `desktopProps` (on the pack's root) | Things to draw on the desktop floor: `[{ source, x (0..1), w, h }]`, sizes in grid units (a plant, a lamp...). Optional: `id`, `mirror`, `lift` (grid units up), `front` (in front of her), `speed` (glides to a new `x` at that many grid units a second: a pet), `tap` (clickable, see `propTapped`). Keep the list the same length while it shows, so moving things glide |
 | `propTapped(id)` | A `tap: true` prop was clicked |
-| `welcomed(kind)` | She just flew (or jumped) in from off screen: `"login"`, `"resume"` or `"back"` |
+| `welcomed(kind)` | She came in from off screen: `"login"`, `"resume"` or `"back"`. Broom packs: fired while she hovers in the middle of the screen (6.5 s, `flying` stays true) before she flies to her place; others: when she lands |
 | `sensed(kind, app)` | She noticed `"loud"`, `"mute"`, `"bright"` or `"notify"` (`app` = the app's name). Set `senses: true` on the pack's root to react yourself; otherwise Perch says a line |
 | `weather` (on the pack's root) | `"rain"` or `"snow"`: Perch lets it fall across the empty workspace |
 | `stay` (on the pack's root) | `true` while she's busy at something on the desktop: she doesn't wander off |

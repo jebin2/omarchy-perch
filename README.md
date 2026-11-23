@@ -58,8 +58,10 @@ She shows up on the focused window. Nothing else to set up.
   Packs that can fly take a **broom** on long trips and for joyrides; packs
   that can climb prop a **ladder** against the bar, climb up and swing there
   a while.
-- **Comes in** from off screen at login, after the laptop wakes up, and when
-  you're back after a long time away (on a broom if her pack has one).
+- **Comes in** from off screen at login, when you unlock the screen, after
+  the laptop wakes up, and when you're back after a long time away. Packs
+  with a broom fly a loop in the middle of the screen and hover there to say
+  hello, then fly to her place; others jump in.
 - **Notices** things: covers her ears at 100% volume, says "shh" on mute,
   shades her eyes at full brightness, and points at new notifications (the
   app's name only; not during Do Not Disturb, a meeting or a focus timer).

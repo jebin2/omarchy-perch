@@ -369,8 +369,8 @@ Item {
     wakeTalk.entry = longNap ? timeEntry() : lines.wake
     wakeTalk.topic = longNap ? timeKey() : "wake"
     wakeTalk.restart()
-    // Back after a long time away (the screen was locked): she flies in.
-    if (longNap) entrance("back")
+    // Back after a long time away: she flies in.
+    if (longNap) wantEntrance("back")
   }
   Timer {
     id: wakeTalk
@@ -403,11 +403,28 @@ Item {
   }
 
   // ---- Her entrance ----------------------------------------------------------
-  // At login, after the laptop wakes up, and when you're back after a long
-  // time away, she comes in from off screen: on her broom if her pack has
-  // one, else with a big jump. `kind`: "login", "resume" or "back".
+  // At login, after unlocking the screen, after the laptop wakes up, and when
+  // you're back after a long time away, she comes in from off screen: on her
+  // broom if her pack has one, else with a big jump. `kind`: "login",
+  // "back" (unlock, long time away) or "resume".
+  // It waits (up to a minute) until she can: a window or the desktop to land
+  // on, not asleep, not mid-trip. Her window calls `entered()` once she's off.
   signal entrance(string kind)
-  Timer { interval: 3500; running: true; onTriggered: root.entrance("login") }
+  property string entrancePending: "login"
+  property double entranceAt: Date.now() + 3000
+  function wantEntrance(kind) { entrancePending = kind; entranceAt = Date.now() + 700 }
+  function entered() { entrancePending = "" }
+  Timer {
+    interval: 800
+    repeat: true
+    running: root.entrancePending !== ""
+    onTriggered: {
+      var now = Date.now()
+      if (now < root.entranceAt) return
+      if (now - root.entranceAt > 60000) { root.entrancePending = ""; return }
+      if (root.shown && (root.hasWindow || root.desktop) && !root.sleeping) root.entrance(root.entrancePending)
+    }
+  }
   // A suspend shows up as a gap in time: this ticks every 5 s.
   property double lastTick: Date.now()
   Timer {
@@ -416,10 +433,20 @@ Item {
     running: true
     onTriggered: {
       var now = Date.now()
-      if (now - root.lastTick > 60000) root.entrance("resume")
+      if (now - root.lastTick > 60000) root.wantEntrance("resume")
       root.lastTick = now
     }
   }
+  // Unlocking: Omarchy's lock screen logs "omarchy lock <time> unlocked".
+  // journalctl waits on the journal (no polling) and only passes that line.
+  Process {
+    id: lockWatch
+    command: ["journalctl", "--user", "-f", "-n", "0", "-o", "cat", "-t", "omarchy-shell", "--grep", "omarchy lock \\S+ unlocked$"]
+    running: true
+    stdout: SplitParser { onRead: function(line) { if (/ unlocked\s*$/.test(line)) root.wantEntrance("back") } }
+    onExited: lockWatchAgain.restart()
+  }
+  Timer { id: lockWatchAgain; interval: 30000; onTriggered: lockWatch.running = true }
 
   // ---- What she notices: loud sound, mute, a too-bright screen, notifications
   // `sense(kind)`: "loud" (volume at 100% or more), "mute", "bright"

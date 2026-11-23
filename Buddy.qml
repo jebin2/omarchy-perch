@@ -75,6 +75,9 @@ Item {
   // She came in from off screen (login, waking the laptop, back after a long
   // time away) and just landed: "login", "resume" or "back".
   signal welcomed(string kind)
+  // On the desktop she sometimes flies a loop in the sky and hovers there a
+  // few seconds (broom packs): this fires when the hover starts.
+  signal skyHover()
   // Things she notices: "loud", "mute", "bright", "notify" (with the app's
   // name). A pack with `senses: true` reacts itself; others get a line.
   signal sensed(string kind, string app)
@@ -430,7 +433,7 @@ Item {
 
     // ---- Swing ropes, behind everything ---------------------------------
     Part {
-      visible: buddy.hanging && !buddy.packOwnsSwing && !buddy.jumping
+      visible: buddy.hanging && !buddy.packOwnsSwing && !buddy.jumping && !buddy.flying
       fill: "transparent"; stroke: "#c8a27a"; strokeWidth: 1.1
       d: "M 19.1 -7 L 19.1 56.6 M 44.9 -7 L 44.9 56.6"
     }
