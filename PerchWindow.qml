@@ -418,6 +418,8 @@ PanelWindow {
   color: "transparent"
   exclusionMode: ExclusionMode.Ignore
   // Only her body takes the pointer: the mask is her hit box, wherever she is.
+  // Stepped out of a screenshot (the `shot` command with "hide").
+  visible: !perch.shotHidden
   mask: Region {
     x: Math.round(buddy.x + buddy.hitBox.x)
     y: Math.round(buddy.y + buddy.hitBox.y)

@@ -174,6 +174,9 @@ Item {
   readonly property bool deskGames: opt("deskGames")
   readonly property bool deskNotes: opt("deskNotes")
   readonly property bool deskSenses: opt("deskSenses")
+  // Screenshots taken with the `shot` key binding: "pose" (she strikes a
+  // selfie pose for it) or "hide" (she's out of the picture).
+  readonly property string shots: config.shots === "hide" ? "hide" : "pose"
 
   readonly property real minSize: 0.5
   readonly property real maxSize: 2.0
@@ -214,6 +217,7 @@ Item {
     for (var k in config) c[k] = config[k]
     if (key === "character" && validName(value)) c.character = value
     else if (key === "size" && isFinite(Number(value))) c.size = Math.round(Math.max(minSize, Math.min(maxSize, Number(value))) * 100) / 100
+    else if (key === "shots" && /^(pose|hide)$/.test(value)) c.shots = value
     else if (key === "winMove" && /^(run|jump|fly)$/.test(value)) { c.winMove = value; delete c.winFly }
     else if (key === "shown" || key === "talk" || views[key] !== undefined) c[key] = value === true || value === "true"
     else return
@@ -549,7 +553,11 @@ Item {
   // Notifications: listen on the session bus for Notify calls (the app name
   // only). Not while Do Not Disturb is on.
   property bool dnd: false
-  property real selfieAt: 0     // the last `selfie` call (the shot's own notice then stays quiet)
+  property real selfieAt: 0     // the last `selfie` / `shot` call (the shot's own notice then stays quiet)
+  // Out of sight for a screenshot: back once the screenshot tool has
+  // grabbed the screen (it does that as it starts).
+  property bool shotHidden: false
+  Timer { id: shotBack; interval: 2500; onTriggered: root.shotHidden = false }
   FileView {
     path: Quickshell.env("HOME") + "/.local/state/omarchy/notifications/quiet.json"
     watchChanges: true
@@ -954,6 +962,17 @@ Item {
     // `omarchy-shell -q jebin2.perch selfie; sleep 0.8; omarchy-capture-screenshot`
     // and she's in the shot.
     function selfie(): void { root.selfieAt = Date.now(); root.senseOnce("selfie", "", 0) }
+    // `shot`: get ready for a screenshot as set in the panel (pose, or step
+    // out of the picture) and print how long to wait before taking it, in
+    // seconds. For a screenshot key:
+    //   d=$(omarchy-shell jebin2.perch shot); sleep "${d:-0}"; omarchy-capture-screenshot
+    function shot(): string {
+      if (!root.shown) return "0"
+      root.selfieAt = Date.now()
+      if (root.shots === "hide") { root.shotHidden = true; shotBack.restart(); return "0.15" }
+      root.senseOnce("selfie", "", 0)
+      return "0.8"
+    }
 
     // `note "call mom at 6"` pins a sticky note (a time at the end is
     // optional); `notes` lists them; `unnote 2` / `unnote all` takes down.
@@ -983,6 +1002,7 @@ Item {
     }
 
     // character <name> | size <0.5..2.0> | shown true/false | talk true/false
+    // | shots pose/hide
     // | winMove run/jump/fly | winSky, winSenses, winBreaks, deskShow, deskFly, deskAir, deskGames,
     //   deskNotes, deskSenses true/false
     function set(key: string, value: string): void {

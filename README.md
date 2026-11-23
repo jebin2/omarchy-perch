@@ -114,15 +114,19 @@ From a script or a key binding: `omarchy-shell jebin2.perch set size 1.2`
 switch above, like `set winSky true` or `set winMove fly`), and
 `omarchy-shell jebin2.perch toggle` to hide or show her.
 
-### Be in your screenshots
+### Screenshots: pose, or stay out
 
 She notices Omarchy screenshots and poses afterwards. To have her pose *in*
-the shot, put this in `~/.config/hypr/bindings.lua` (she gets 0.8 s to strike
-the pose, then the screenshot tool starts as usual):
+the shot, or step out of it, bind your screenshot key to the `shot` command in
+`~/.config/hypr/bindings.lua`:
 
 ```lua
-o.rebind("PRINT", "Screenshot", "sh -c 'omarchy-shell -q jebin2.perch selfie; sleep 0.8; exec omarchy-capture-screenshot'")
+o.rebind("PRINT", "Screenshot", [[sh -c 'd=$(omarchy-shell jebin2.perch shot 2>/dev/null); case "$d" in 0|0.*) ;; *) d=0 ;; esac; sleep "$d"; exec omarchy-capture-screenshot']])
 ```
+
+The panel's **In screenshots** picks what she does: **Pose for them** (a
+selfie pose, the shot waits 0.8 s for it) or **Stay out** (she's hidden for
+the shot and back 2.5 s later).
 
 ## What she says
 

@@ -36,6 +36,7 @@ Panel {
     "deskShow": true, "deskFly": true, "deskAir": true, "deskGames": true, "deskNotes": true, "deskSenses": true
   })
   function opt(key) { return config[key] === undefined ? views[key] : config[key] === true }
+  readonly property string shots: config.shots === "hide" ? "hide" : "pose"
   property string view: "win"
   readonly property string winMove: /^(run|jump|fly)$/.test(String(config.winMove)) ? config.winMove : config.winFly === true ? "fly" : "run"
   readonly property var viewKeys: view === "win"
@@ -269,6 +270,28 @@ Panel {
             step: 0.05
             value: root.size
             onReleased: function(v) { root.set("size", v.toFixed(2)) }
+          }
+        }
+
+        // Screenshots taken with a key bound to the `shot` command.
+        Column {
+          width: parent.width
+          spacing: Style.space(6)
+          Text {
+            textFormat: Text.PlainText
+            text: strings.t("shots")
+            color: Qt.darker(root.bar.foreground, 1.4)
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.caption
+            font.bold: true
+          }
+          ButtonGroup {
+            width: parent.width
+            options: [{ value: "pose", label: strings.t("shots.pose") }, { value: "hide", label: strings.t("shots.hide") }]
+            value: root.shots
+            foreground: root.bar.foreground
+            fontFamily: root.bar.fontFamily
+            onChanged: function(v) { root.set("shots", v) }
           }
         }
 
