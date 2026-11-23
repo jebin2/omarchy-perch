@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "jebin2.perch",
   "name": "Perch",
-  "version": "0.14.0",
+  "version": "0.14.1",
   "author": "jebin2",
   "license": "MIT",
   "description": "Mochi, a tiny chibi friend who sits on the corner of your focused window: swings her legs, chats in comic speech bubbles (serious, fun and sassy), waves when you switch windows, scoots out of the pointer's way and naps when you're away.",

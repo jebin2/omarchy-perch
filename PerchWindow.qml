@@ -76,7 +76,7 @@ PanelWindow {
     var dx = from - roamLeft
     walkAnim.stop()
     walkDX = dx; walkDY = 0; walkT = 1
-    jumpHeight = Math.min(screenH * 0.45, 140 + Math.abs(dx) * 0.3)
+    jumpHeight = Math.min(screenH * 0.45, 140 + Math.abs(dx) * 0.3, Math.max(0, curTop - barTop - 6 * buddy.s))
     flyWaves = Math.max(1, Math.round(Math.abs(dx) / 300))
     walkAnim.duration = Math.max(1400, Math.min(3400, 900 + Math.abs(dx) * 1.4))
     buddy.running = false; buddy.jumping = false; buddy.flying = true
@@ -307,10 +307,13 @@ PanelWindow {
   readonly property real arcLift: buddy.jumping || buddy.flying
     ? jumpHeight * Math.sin(Math.PI * walkT) + (buddy.flying ? 5 * buddy.s * Math.sin(walkT * flyWaves * Math.PI * 2) : 0) : 0
   property real flyWaves: 3
+  // The jump or broom arc never takes her above the bar (off the screen):
+  // near the top it flattens out.
+  readonly property real pathTop: Math.max(0, wantTop + walkT * walkDY)
   readonly property real curTop: enterPhase !== "" ? enterTop
     : buddy.dragging ? dragBaseTop + buddy.dragOffset.y
     : landing ? dropTop
-    : Math.max(0, wantTop + walkT * walkDY) - arcLift + settleDY
+    : pathTop - Math.min(arcLift, Math.max(0, pathTop - barTop)) + settleDY
   readonly property int liveLeft: Math.round(curLeft)
   readonly property int liveTop: Math.round(curTop)
   property var prevSeat: null
@@ -358,6 +361,8 @@ PanelWindow {
     walkDY = dy
     walkT = 1
     var flyNow = mayFly && (moveMode === "fly" ? dist > 250 : dist > 450)
+    // Room above the higher end of the trip, below the bar.
+    var room = Math.max(0, Math.min(from.top, Math.max(0, wantTop)) - barTop - 6 * buddy.s)
     if (level && moveMode !== "jump" && !flyNow) {
       var run = !hanging && Math.abs(dx) >= runFrom
       var speed = hanging ? slideSpeed : run ? runSpeed : walkSpeed
@@ -366,14 +371,14 @@ PanelWindow {
       buddy.jumping = false
     } else if (flyNow) {
       // Far: on her broom, in a long gentle arc.
-      jumpHeight = Math.min(240, 60 + 0.2 * dist)
+      jumpHeight = Math.min(240, 60 + 0.2 * dist, room)
       flyWaves = Math.max(1, Math.round(dist / 350))
       walkAnim.duration = Math.max(1000, Math.min(2800, 600 + 0.9 * dist))
       buddy.running = false
       buddy.jumping = false
       buddy.flying = true
     } else {
-      jumpHeight = Math.min(160, 30 * buddy.s + 0.18 * dist)
+      jumpHeight = Math.min(160, 30 * buddy.s + 0.18 * dist, Math.max(12 * buddy.s, room))
       walkAnim.duration = Math.max(450, Math.min(1100, 350 + 0.45 * dist))
       buddy.running = false
       buddy.jumping = true
