@@ -1,0 +1,16 @@
+{
+  "title": "Perch",
+  "status.hidden": "Hidden",
+  "show.label": "Show her",
+  "show.description": "On the focused window. Right-click the bar icon to hide or show.",
+  "talk.label": "Talk",
+  "talk.description": "Speech bubbles: reminders, jokes, app comments.",
+  "character": "Character",
+  "size": "Size · %1%",
+  "moves": "Make her…",
+  "move.wave": "Wave",
+  "move.think": "Think",
+  "move.yawn": "Yawn",
+  "move.stretch": "Stretch",
+  "move.fall": "Fall"
+}

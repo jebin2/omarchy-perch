@@ -21,7 +21,10 @@ Item {
   property var manifest: null
 
   // Tunables.
-  readonly property real size: 0.9          // 1.0 = a 64 x 80 px box
+  // Size, visibility, talking and the character are settings: they live in
+  // ~/.config/perch/config.json (see "Settings" below) and the bar icon's
+  // panel changes them.
+  property real size: 0.9                   // 1.0 = a 64 x 80 px box
   readonly property int inset: 26           // gap between her and the window's right edge, px
   readonly property int sleepAfter: 90      // seconds without input before she naps
   readonly property int pollMs: 150
@@ -42,7 +45,7 @@ Item {
 
   // The focused window, as Hyprland last reported it.
   property var info: null
-  readonly property bool hasWindow: !!info && !!info.at && info.at.length === 2
+  readonly property bool hasWindow: shown && !!info && !!info.at && info.at.length === 2
     && !!info.size && info.size.length === 2 && info.size[0] > 0
     && info.mapped !== false && info.hidden !== true && !(Number(info.fullscreen) >= 2)
 
@@ -109,6 +112,73 @@ Item {
     arrivalDelay.restart()
   }
 
+  // ---- Character --------------------------------------------------------
+  //
+  // ~/.config/perch/config.json: { "character": "<name>" }. A name shipped
+  // with the plugin (characters/<name>/) wins; otherwise the pack is read from
+  // ~/.config/perch/characters/<name>/Character.qml, so private characters
+  // never live inside the plugin folder. Switching takes effect on save.
+
+  readonly property var builtInCharacters: ["mochi"]
+  property string characterName: "mochi"
+  readonly property string characterUrl: {
+    var name = characterName
+    if (builtInCharacters.indexOf(name) >= 0) return Qt.resolvedUrl("characters/" + name + "/Character.qml")
+    return "file://" + home + "/.config/perch/characters/" + name + "/Character.qml"
+  }
+
+  // ---- Settings --------------------------------------------------------
+  //
+  // ~/.config/perch/config.json, all optional:
+  //   { "character": "mochi", "size": 0.9, "shown": true, "talk": true }
+  // Read on every save; the bar panel writes it through the `set` command.
+
+  readonly property real minSize: 0.5
+  readonly property real maxSize: 1.6
+  property bool shown: true
+  onShownChanged: if (shown) query()
+  property var config: ({})
+
+  FileView {
+    id: configFile
+    path: root.home + "/.config/perch/config.json"
+    watchChanges: true
+    printErrors: false
+    onLoaded: root.loadConfig()
+    onLoadFailed: { root.config = {}; root.applyConfig() }
+    onFileChanged: reload()
+  }
+
+  function loadConfig() {
+    var parsed = {}
+    try { parsed = JSON.parse(configFile.text()) } catch (e) {}
+    config = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {}
+    applyConfig()
+  }
+
+  function validName(v) { return typeof v === "string" && /^[A-Za-z0-9_-]{1,40}$/.test(v) }
+
+  function applyConfig() {
+    var c = config
+    characterName = validName(c.character) ? c.character : "mochi"
+    var z = Number(c.size)
+    size = isFinite(z) && z > 0 ? Math.max(minSize, Math.min(maxSize, z)) : 0.9
+    shown = c.shown !== false
+    talk = c.talk !== false
+  }
+
+  function setOption(key, value) {
+    var c = {}
+    for (var k in config) c[k] = config[k]
+    if (key === "character" && validName(value)) c.character = value
+    else if (key === "size" && isFinite(Number(value))) c.size = Math.round(Math.max(minSize, Math.min(maxSize, Number(value))) * 100) / 100
+    else if (key === "shown" || key === "talk") c[key] = value === true || value === "true"
+    else return
+    config = c
+    applyConfig()
+    configFile.setText(JSON.stringify(c, null, 2) + "\n")
+  }
+
   // ---- Talk -----------------------------------------------------------
   //
   // Lines come from lines.json next to this file; ~/.config/perch/lines.json
@@ -116,7 +186,7 @@ Item {
   // mood. Ordinary lines keep a quiet gap between them; event lines (battery,
   // a closed window, a break reminder, waking up) skip it.
 
-  readonly property bool talk: true
+  property bool talk: true
   readonly property var moods: ["serious", "fun", "sassy"]
   readonly property int quietGapSec: 45       // at least this long between ordinary lines
   readonly property int chatterEverySec: 360  // a random line roughly this often (+-30%)
@@ -332,7 +402,7 @@ Item {
   Timer {
     interval: root.pollMs
     repeat: true
-    running: !root.sleeping
+    running: !root.sleeping && root.shown
     onTriggered: root.query()
   }
 
@@ -420,7 +490,7 @@ Item {
   }
 
   // `omarchy-shell jebin2.perch say "text"` makes her say something;
-  // `omarchy-shell jebin2.perch act wave|yawn|stretch|fall` plays a move.
+  // `omarchy-shell jebin2.perch act wave|yawn|stretch|think|fall` plays a move.
   ShellIpc {
     target: "jebin2.perch"
 
@@ -432,8 +502,15 @@ Item {
     function act(what: string): void {
       var move = String(what || "")
       if (move === "fall") { root.fallPending = true; root.fell(true); arrivalDelay.interval = 700; arrivalDelay.restart() }
-      else if (["wave", "yawn", "stretch"].indexOf(move) >= 0) root.act(move)
+      else if (["wave", "yawn", "stretch", "think"].indexOf(move) >= 0) root.act(move)
     }
+
+    // character <name> | size <0.5..1.6> | shown true/false | talk true/false
+    function set(key: string, value: string): void {
+      root.setOption(String(key || ""), String(value || ""))
+    }
+
+    function toggle(): void { root.setOption("shown", root.shown ? "false" : "true") }
   }
 
   Variants {

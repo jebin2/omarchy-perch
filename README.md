@@ -41,6 +41,26 @@ She shows up on the focused window. Nothing else to set up.
 Only her body takes the pointer; the rest of her little window, bubble
 included, lets clicks through.
 
+## Bar icon
+
+Perch adds a small kiwi icon to the bar. Click it for a panel to:
+
+- show or hide her (or right-click the icon),
+- turn her speech bubbles on or off,
+- pick a character (Mochi, or your own packs; see [CHARACTERS.md](CHARACTERS.md)),
+- change her size (50–160%),
+- make her wave, think, yawn, stretch or fall.
+
+The panel saves to `~/.config/perch/config.json`, which you can also edit:
+
+```json
+{ "character": "mochi", "size": 0.9, "shown": true, "talk": true }
+```
+
+From a script or a key binding: `omarchy-shell jebin2.perch set size 1.2`
+(also `character <name>`, `shown true|false`, `talk true|false`), and
+`omarchy-shell jebin2.perch toggle` to hide or show her.
+
 ## What she says
 
 She has three moods, **serious** (gentle reminders), **fun** and **sassy**,
@@ -146,7 +166,7 @@ window's class.
 
 ## How it works
 
-Perch is a background (`service`) plugin. It draws Mochi in a small,
+Perch is a background (`service`) plugin with a bar icon (`bar-widget`). It draws Mochi in a small,
 transparent layer window and moves it to the focused window.
 
 - **Where the window is:** Hyprland sends no events while a window is dragged
@@ -171,11 +191,9 @@ The numbers at the top of `Perch.qml`:
 
 | Setting | Default | What |
 |---|---|---|
-| `size` | `0.9` | Her size; 1.0 is a 64 × 80 px box |
 | `inset` | `26` | Gap between her and the window's right edge, px |
 | `sleepAfter` | `90` | Seconds without input before she naps |
 | `pollMs` | `150` | How often the focused window's position is checked while she is awake |
-| `talk` | `true` | `false` keeps her quiet |
 | `moods` | all three | Which moods she picks lines from |
 | `quietGapSec` | `45` | Least time between ordinary lines |
 | `chatterEverySec` | `360` | About how often she says something random |

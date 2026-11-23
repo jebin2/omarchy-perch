@@ -133,6 +133,7 @@ PanelWindow {
       if (what === "wave") buddy.wave()
       else if (what === "yawn") buddy.yawn()
       else if (what === "stretch") buddy.stretch()
+      else if (what === "think") buddy.think()
     }
   }
 
@@ -155,6 +156,8 @@ PanelWindow {
     shown: win.here
     sleeping: win.perch.sleeping
     thrifty: win.perch.onBattery
+    talking: bubble.active
+    characterUrl: win.perch.characterUrl
     hanging: win.perch.hasWindow && win.onThisScreen && win.hanging
     onPoked: function(x) { win.flee(x) }
   }
