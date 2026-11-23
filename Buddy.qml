@@ -43,6 +43,9 @@ Item {
   // ladder from the desktop floor up to the bar and swing there a while.
   readonly property bool packFlies: !!(character.item && character.item.flies)
   readonly property bool packClimbs: !!(character.item && character.item.climbs)
+  // A pack busy at something on the desktop (toasting marshmallows, a cat
+  // in her lap) sets `stay: true`: she doesn't wander off by herself.
+  readonly property bool packStays: !!(character.item && character.item.stay)
   property bool flying: false
   property bool climbing: false
   property int climbDir: 1             // 1 up, -1 down
@@ -53,7 +56,23 @@ Item {
   function goTo(fraction) { wantsToGo(Math.max(0, Math.min(1, Number(fraction) || 0))) }
   // Things the pack puts on the desktop floor: [{ source, x (0..1), w, h }]
   // in grid units; Perch draws them at that spot on the bottom of the screen.
+  // Optional: `id`, `mirror` (flip), `lift` (grid units up from the floor),
+  // `front` (in front of her), `speed` (glides to a new x at that many grid
+  // units a second, for things that move: a pet), `tap` (clickable: Perch
+  // calls `propTapped(id)`). Keep the list the same length while it's shown,
+  // so moving things glide instead of jumping.
   readonly property var desktopProps: character.item && Array.isArray(character.item.desktopProps) ? character.item.desktopProps : []
+  signal propTapped(string id)
+  // Weather on the desktop: a pack that knows it sets `weather` to "rain" or
+  // "snow" and Perch lets it fall across the empty workspace.
+  readonly property string weather: character.item && /^(rain|snow)$/.test(String(character.item.weather || "")) ? character.item.weather : ""
+  // Focus timer (bar panel or `omarchy-shell jebin2.perch focus 25`): while
+  // `focusing` she stays put and keeps quiet; `focusLeft` is in seconds.
+  // `focusStarted` / `focusDone` fire at the ends.
+  property bool focusing: false
+  property int focusLeft: 0
+  signal focusStarted(int minutes)
+  signal focusDone(int minutes)
   // Room a pack draws above its 64 x 80 box (hats, standing up to walk), in
   // grid units: her window keeps that much space above her.
   readonly property real headroom: character.item && Number(character.item.headroom) > 0

@@ -12,5 +12,9 @@
   "move.think": "Think",
   "move.yawn": "Yawn",
   "move.stretch": "Stretch",
-  "move.fall": "Fall"
+  "move.fall": "Fall",
+  "focus": "Focus timer",
+  "focus.left": "Focusing · %1 left",
+  "focus.minutes": "%1 min",
+  "focus.stop": "Stop"
 }

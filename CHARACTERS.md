@@ -75,7 +75,11 @@ Bind your pieces' rotations and visibility to these; Perch animates them.
 | `flying` | On her broom (only packs with `flies: true`): long trips, joyrides on the desktop; `walkDir` is the direction |
 | `climbing`, `climbDir` | On her ladder from the desktop floor to the bar (`climbs: true`), `1` up, `-1` down; up there she `hanging`s from the bar |
 | `deskX`, `goTo(x)` | On the desktop: where she is across the screen (0..1), and `buddy.goTo(0.1)` sends her walking there |
-| `desktopProps` (on the pack's root) | Things to draw on the desktop floor: `[{ source, x (0..1), w, h }]`, sizes in grid units (a plant, a lamp...) |
+| `desktopProps` (on the pack's root) | Things to draw on the desktop floor: `[{ source, x (0..1), w, h }]`, sizes in grid units (a plant, a lamp...). Optional: `id`, `mirror`, `lift` (grid units up), `front` (in front of her), `speed` (glides to a new `x` at that many grid units a second: a pet), `tap` (clickable, see `propTapped`). Keep the list the same length while it shows, so moving things glide |
+| `propTapped(id)` | A `tap: true` prop was clicked |
+| `weather` (on the pack's root) | `"rain"` or `"snow"`: Perch lets it fall across the empty workspace |
+| `stay` (on the pack's root) | `true` while she's busy at something on the desktop: she doesn't wander off |
+| `focusing`, `focusLeft`, `focusStarted(min)`, `focusDone(min)` | The focus timer runs (seconds left): Perch keeps her quiet and in place; a pack can show a calm pose |
 | `meeting` | The mic or camera is in use: Perch keeps her quiet |
 | `music`, `movie` | A music player is playing; a video player (or a browser on a video site) is playing |
 | `windowTitle` | The focused window's title |

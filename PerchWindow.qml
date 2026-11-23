@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Particles
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -109,6 +110,7 @@ PanelWindow {
     onTriggered: {
       interval = 6000 + Math.random() * 8000
       if (buddy.walking || buddy.dragging || win.perch.sleeping || win.falling || bubble.active || buddy.meeting || buddy.climbing) return
+      if (buddy.focusing || buddy.packStays) return   // she stays put while you focus, or while she's busy
       if (buddy.climbing || win.deskSpot === "bar") return
       var r = Math.random()
       var x = Math.random() * (win.screenW - buddy.width)
@@ -381,7 +383,14 @@ PanelWindow {
     y: Math.round(buddy.y + buddy.hitBox.y)
     width: Math.round(buddy.hitBox.width)
     height: Math.round(buddy.hitBox.height)
+    // A prop you can click (her pet).
+    Region {
+      x: Math.round(win.tapRect.x); y: Math.round(win.tapRect.y)
+      width: win.onDesktop ? Math.round(win.tapRect.width) : 0
+      height: win.onDesktop ? Math.round(win.tapRect.height) : 0
+    }
   }
+  property rect tapRect: Qt.rect(0, 0, 0, 0)
   WlrLayershell.namespace: "jebin2-perch"
   WlrLayershell.layer: WlrLayer.Top
   WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
@@ -435,6 +444,9 @@ PanelWindow {
       buddy.heard(topic, mood, line)
     }
 
+    function onFocusStarted(minutes) { buddy.focusStarted(minutes) }
+    function onFocusDone(minutes) { buddy.focusDone(minutes) }
+
     function onShowSign(text) {
       if (!(win.perch.hasWindow && win.onThisScreen) && !win.onDesktop) return
       buddy.showSign(text)
@@ -457,18 +469,85 @@ PanelWindow {
     onTriggered: win.falling = false
   }
 
-  // Things her pack puts on the desktop floor (a plant...).
+  // Rain or snow across the empty workspace, when her pack says it's
+  // falling outside. Nothing exists (or runs) otherwise.
+  Loader {
+    anchors.fill: parent
+    active: win.onDesktop && buddy.weather !== "" && !win.perch.sleeping
+    sourceComponent: Item {
+      id: weatherSky
+      readonly property bool rain: buddy.weather === "rain"
+      ParticleSystem { id: sky }
+      ImageParticle {
+        system: sky
+        source: weatherSky.rain ? "sky/rain.png" : "sky/snow.png"
+        opacity: weatherSky.rain ? 0.55 : 0.8
+      }
+      Emitter {
+        system: sky
+        x: -width * 0.05; y: -30; width: win.screenW * 1.1; height: 1
+        emitRate: (weatherSky.rain ? 90 : 26) * (win.perch.onBattery ? 0.5 : 1)
+        lifeSpan: weatherSky.rain ? Math.round(win.screenH / 0.95) : Math.round(win.screenH / 0.055)
+        size: weatherSky.rain ? 30 : 9
+        sizeVariation: weatherSky.rain ? 8 : 5
+        velocity: PointDirection {
+          x: weatherSky.rain ? -40 : 0; xVariation: weatherSky.rain ? 10 : 12
+          y: weatherSky.rain ? 950 : 55; yVariation: weatherSky.rain ? 120 : 20
+        }
+      }
+      Wander {
+        system: sky
+        enabled: !weatherSky.rain
+        xVariance: 40; pace: 40
+      }
+    }
+  }
+
+  // Things her pack puts on the desktop floor (a plant, a pet...). The
+  // delegates stay while the list keeps its length, so things glide.
   Repeater {
-    model: win.onDesktop ? buddy.desktopProps : []
+    model: win.onDesktop ? buddy.desktopProps.length : 0
     Image {
-      required property var modelData
-      width: Number(modelData.w || 0) * buddy.s
-      height: Number(modelData.h || 0) * buddy.s
-      x: Math.round(Number(modelData.x || 0) * win.screenW - width / 2)
-      y: Math.round(win.screenH - height)
-      source: modelData.source || ""
+      id: prop
+      required property int index
+      readonly property var p: buddy.desktopProps[index] || ({})
+      width: Number(p.w || 0) * buddy.s
+      height: Number(p.h || 0) * buddy.s
+      x: Math.round(Number(p.x || 0) * win.screenW - width / 2)
+      y: Math.round(win.screenH - height - Number(p.lift || 0) * buddy.s)
+      z: p.front ? 1 : 0
+      Behavior on x { enabled: Number(prop.p.speed) > 0; SmoothedAnimation { velocity: Math.max(1, Number(prop.p.speed) || 1) * buddy.s } }
+      mirror: !!p.mirror
+      source: p.source || ""
       smooth: true; mipmap: true
       asynchronous: true
+      Binding { when: !!prop.p.tap; target: win; property: "tapRect"; value: Qt.rect(prop.x, prop.y, prop.width, prop.height) }
+      TapHandler {
+        enabled: !!prop.p.tap
+        onTapped: buddy.propTapped(String(prop.p.id || prop.index))
+      }
+    }
+  }
+
+  // The focus timer, small, near her.
+  Rectangle {
+    id: focusChip
+    visible: buddy.focusing && buddy.visible && !bubble.active
+    readonly property int secs: buddy.focusLeft
+    width: focusText.implicitWidth + 12; height: focusText.implicitHeight + 4
+    radius: height / 2
+    color: Qt.rgba(0.08, 0.08, 0.1, 0.72)
+    border.color: Qt.rgba(1, 1, 1, 0.25); border.width: 1
+    x: Math.round(buddy.x + buddy.width / 2 - width / 2)
+    y: win.hanging || buddy.y < 40 ? Math.round(buddy.y + buddy.height + 2) : Math.round(buddy.y - height - 2)
+    Text {
+      id: focusText
+      anchors.centerIn: parent
+      textFormat: Text.PlainText
+      text: "◷ " + Math.floor(focusChip.secs / 60) + ":" + ("0" + focusChip.secs % 60).slice(-2)
+      color: "white"
+      font.pixelSize: 11
+      font.bold: true
     }
   }
 
@@ -534,6 +613,8 @@ PanelWindow {
     deskX: win.screenW > 0 ? (win.curLeft + width / 2) / win.screenW : 0.5
     music: win.perch.music
     movie: win.perch.movie
+    focusing: win.perch.focusing
+    focusLeft: win.perch.focusLeft
     windowTitle: win.onThisScreen ? win.perch.windowTitle : ""
     onDraggingChanged: if (dragging) win.startDrag()
     onDropped: win.drop()

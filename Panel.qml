@@ -49,6 +49,28 @@ Panel {
   function set(key, value) {
     Quickshell.execDetached(["omarchy-shell", "jebin2.perch", "set", key, String(value)])
   }
+  // Focus timer: the service keeps its end time in this file.
+  property real focusEnd: 0
+  property real clock: Date.now()
+  readonly property int focusLeft: focusEnd > clock ? Math.ceil((focusEnd - clock) / 1000) : 0
+  function focus(minutes) {
+    Quickshell.execDetached(["omarchy-shell", "jebin2.perch", "focus", String(minutes)])
+  }
+  FileView {
+    path: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/perch-focus"
+    watchChanges: true
+    printErrors: false
+    onLoaded: { try { root.focusEnd = Number(JSON.parse(text()).end) || 0 } catch (e) { root.focusEnd = 0 }; root.clock = Date.now() }
+    onLoadFailed: root.focusEnd = 0
+    onFileChanged: reload()
+  }
+  Timer {
+    interval: 1000
+    repeat: true
+    running: root.opened && root.focusEnd > 0
+    onTriggered: root.clock = Date.now()
+  }
+
   function act(move) {
     Quickshell.execDetached(["omarchy-shell", "jebin2.perch", "act", move])
   }
@@ -186,6 +208,33 @@ Panel {
             step: 0.05
             value: root.size
             onReleased: function(v) { root.set("size", v.toFixed(2)) }
+          }
+        }
+
+        PanelSectionHeader {
+          width: parent.width
+          text: root.focusLeft > 0
+            ? strings.t("focus.left").arg(Math.floor(root.focusLeft / 60) + ":" + ("0" + root.focusLeft % 60).slice(-2))
+            : strings.t("focus")
+          foreground: root.bar.foreground
+          fontFamily: root.bar.fontFamily
+        }
+
+        Flow {
+          width: parent.width
+          spacing: Style.space(6)
+          Repeater {
+            model: root.focusLeft > 0 ? [0] : [25, 50, 90]
+            delegate: Button {
+              required property var modelData
+              text: modelData > 0 ? strings.t("focus.minutes").arg(modelData) : strings.t("focus.stop")
+              enabled: root.shown
+              opacity: enabled ? 1.0 : 0.5
+              foreground: root.bar.foreground
+              fontFamily: root.bar.fontFamily
+              bordered: true
+              onClicked: root.focus(modelData)
+            }
           }
         }
 

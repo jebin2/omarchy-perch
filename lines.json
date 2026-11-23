@@ -98,6 +98,16 @@
     "serious": ["fresh look!"],
     "sassy": ["do I look good? I look good."]
   },
+  "focus_start": {
+    "fun": ["focus mode · {min} min 🎧", "{min} min. go go go!"],
+    "serious": ["focus · {min} min"],
+    "sassy": ["{min} min. no tabs. I'm watching."]
+  },
+  "focus_done": {
+    "fun": ["done! break time 🌸", "you did it! stretch 🙆"],
+    "serious": ["time's up. take 5."],
+    "sassy": ["timer's done. so are you. break."]
+  },
   "break": {
     "fun": ["stretch with me! ~", "wiggle your toes 🦶"],
     "serious": ["an hour in. stand up and stretch?", "water break? 💧"],

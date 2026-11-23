@@ -73,6 +73,8 @@ Perch adds a small kiwi icon to the bar. Click it for a panel to:
 - turn her speech bubbles on or off,
 - pick a character (Mochi, or your own packs; see [CHARACTERS.md](CHARACTERS.md)),
 - change her size (50–200%),
+- start a focus timer (25, 50 or 90 min): she stays put and quiet, shows a
+  little countdown, and holds up a break sign at the end,
 - make her wave, think, yawn, stretch or fall.
 
 The panel saves to `~/.config/perch/config.json`, which you can also edit:
@@ -137,6 +139,7 @@ case-insensitively, as regular expressions. The sections are `app`, `time`
 omarchy-shell jebin2.perch say "build passed! 🎉"
 omarchy-shell jebin2.perch sign "DON'T overthink"   # holds it up on a sign if her pack has one, else says it
 omarchy-shell jebin2.perch act wave      # also: yawn, stretch, think, fall
+omarchy-shell jebin2.perch focus 25      # a focus timer, in minutes; `focus 0` stops it
 ```
 
 Other names (lowercase letters, digits, `-`, `_`) go to the character pack,

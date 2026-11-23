@@ -281,6 +281,8 @@ Item {
 
   function speakLine(line, force, topic, mood) {
     if (!talk || !line || sleeping || !(hasWindow || desktop && canRoam) || fallPending || meeting) return false
+    // Focusing: only what you asked for (say, signs, reminders) gets through.
+    if (focusing && ["say", "sign", "focus"].indexOf(topic) < 0) return false
     var now = Date.now()
     if (now - lastSaid < (force ? 5000 : quietGapSec * 1000)) return false
     lastSaid = now
@@ -395,6 +397,67 @@ Item {
     id: breakSign
     interval: 2400
     onTriggered: { var l = root.pickLine(root.lines["break"]); if (l) root.showSign(l) }
+  }
+
+  // ---- Focus timer: `omarchy-shell jebin2.perch focus 25` ---------------------
+  // While it runs she stays put and keeps quiet; at the end she stretches and
+  // holds up a break sign. The end time is kept in a file in the runtime dir
+  // so the bar panel can show it and a shell restart doesn't lose it.
+  readonly property string focusFile: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/perch-focus"
+  property real focusEnd: 0
+  property int focusMinutes: 0
+  property real clock: Date.now()
+  readonly property bool focusing: focusEnd > 0
+  readonly property int focusLeft: focusing ? Math.max(0, Math.ceil((focusEnd - clock) / 1000)) : 0
+  signal focusStarted(int minutes)
+  signal focusDone(int minutes)
+
+  function startFocus(minutes) {
+    var m = Math.round(Number(minutes))
+    if (!(m >= 1 && m <= 240)) m = 25
+    focusMinutes = m
+    clock = Date.now()
+    focusEnd = clock + m * 60000
+    focusStore.setText(JSON.stringify({ end: focusEnd, minutes: m }) + "\n")
+    focusStarted(m)
+    showSign(focusLine("focus_start").replace("{min}", m))
+  }
+  function stopFocus(finished) {
+    if (!focusing) return
+    var m = focusMinutes
+    focusEnd = 0
+    focusStore.setText("{}\n")
+    if (!finished) return
+    activeMinutes = 0          // that was the work stretch; the break comes now
+    focusDone(m)
+    root.act("stretch")
+    focusSign.restart()
+  }
+  function focusLine(key) {
+    var l = pickLine(lines[key])
+    return l || (key === "focus_start" ? "focus · {min} min" : "break time! 🌸")
+  }
+  Timer {
+    interval: 1000
+    repeat: true
+    running: root.focusing
+    onTriggered: { root.clock = Date.now(); if (root.clock >= root.focusEnd) root.stopFocus(true) }
+  }
+  Timer {
+    id: focusSign
+    interval: 2400
+    onTriggered: root.showSign(root.focusLine("focus_done"))
+  }
+  FileView {
+    id: focusStore
+    path: root.focusFile
+    printErrors: false
+    onLoaded: {
+      try {
+        var f = JSON.parse(text())
+        if (f && Number(f.end) > Date.now()) { root.focusMinutes = Number(f.minutes) || 25; root.clock = Date.now(); root.focusEnd = Number(f.end) }
+      } catch (e) {}
+    }
   }
 
   // ---- Reminders: `omarchy reminder 30 "Pickup Jack"` ------------------------
@@ -638,6 +701,13 @@ Item {
       var line = String(text || "").trim().slice(0, 80)
       if (!line) return
       root.showSign(line)
+    }
+
+    // `focus 25` starts a focus timer (minutes); `focus 0` stops it.
+    function focus(minutes: string): void {
+      var m = Number(minutes)
+      if (m > 0) root.startFocus(m)
+      else root.stopFocus(false)
     }
 
     function act(what: string): void {
