@@ -520,12 +520,11 @@ Item {
     }
 
     // `omarchy-shell jebin2.perch sign "text"`: she holds the text up on a
-    // sign (if her pack has one) and says it.
+    // sign if her pack has one, otherwise she says it.
     function sign(text: string): void {
       var line = String(text || "").trim().slice(0, 80)
       if (!line) return
       root.showSign(line)
-      root.speakLine(line, true, "sign", "")
     }
 
     function act(what: string): void {

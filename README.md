@@ -116,7 +116,7 @@ case-insensitively, as regular expressions. The sections are `app`, `time`
 
 ```bash
 omarchy-shell jebin2.perch say "build passed! 🎉"
-omarchy-shell jebin2.perch sign "DON'T overthink"   # holds it up on a sign, if her pack has one, and says it
+omarchy-shell jebin2.perch sign "DON'T overthink"   # holds it up on a sign if her pack has one, else says it
 omarchy-shell jebin2.perch act wave      # also: yawn, stretch, think, fall
 ```
 

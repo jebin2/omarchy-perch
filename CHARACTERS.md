@@ -71,7 +71,7 @@ Bind your pieces' rotations and visibility to these; Perch animates them.
 | `action`, `actionCount` | A move asked for with `act <name>` that Perch doesn't do itself (e.g. `act cheer`), and a counter that goes up every time: react in `onActionCountChanged` |
 | `calm`, `sleeping` | Between leg-swinging bursts; napping |
 | `walking`, `walkDir`, `running`, `jumping` | Travelling to the next window (`-1` left, `1` right): along a level edge she walks, `running` on long trips (600 px or more), on the swing (`hanging`) the swing slides; `jumping` when the next window isn't level: she flies there in an arc |
-| `signText`, `signCount` | A message to hold up on a sign (`omarchy-shell jebin2.perch sign "text"`, or the pack's own `buddy.showSign(text)`): react in `onSignCountChanged` |
+| `signText`, `signCount` | A message to hold up on a sign (`omarchy-shell jebin2.perch sign "text"`, or the pack's own `buddy.showSign(text)`): react in `onSignCountChanged`; set `hasSign: true` on the pack's root so Perch doesn't also say it in a bubble |
 | `patted`, `pats`, `patCount` | A click on her: `patted` for a moment, `pats` = clicks in the current quick burst, `patCount` goes up with every click: react in `onPatCountChanged` |
 | `startled`, `startleDir` | The pointer touched her; she scoots left (`-1`) or right (`1`) |
 | `waveAmt`, `yawnAmt`, `stretchAmt` | 0..1 while she waves, yawns or stretches |

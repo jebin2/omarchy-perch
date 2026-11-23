@@ -198,7 +198,9 @@ PanelWindow {
     }
 
     function onShowSign(text) {
-      if (win.perch.hasWindow && win.onThisScreen) buddy.showSign(text)
+      if (!(win.perch.hasWindow && win.onThisScreen)) return
+      buddy.showSign(text)
+      if (!buddy.packHasSign) win.perch.speakLine(text, true, "sign", "")
     }
 
     function onAct(what) {

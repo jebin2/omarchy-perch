@@ -32,6 +32,8 @@ Item {
   // fades her instead of also tipping her over).
   readonly property bool packOwnsSwing: !!(character.item && character.item.ownSwing)
   readonly property bool packOwnsFall: !!(character.item && character.item.ownFall)
+  // The pack draws signs itself: then the text isn't also said in a bubble.
+  readonly property bool packHasSign: !!(character.item && character.item.hasSign)
   // Room a pack draws above its 64 x 80 box (hats, standing up to walk), in
   // grid units: her window keeps that much space above her.
   readonly property real headroom: character.item && Number(character.item.headroom) > 0
