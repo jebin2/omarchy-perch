@@ -161,10 +161,10 @@ Item {
     "deskShow": true, "deskFly": true, "deskAir": true, "deskGames": true, "deskNotes": true, "deskSenses": true
   })
   function opt(key) { return config[key] === undefined ? views[key] : config[key] === true }
-  // How she gets to the next window: "walk" (hops only to go up or down),
+  // How she gets to the next window: "run" (jumps only to go up or down),
   // "jump", or "fly" (on her broom; also the hello loop). An old
-  // `winFly: true` means "fly".
-  readonly property string winMove: /^(walk|jump|fly)$/.test(String(config.winMove)) ? config.winMove : config.winFly === true ? "fly" : "walk"
+  // `winFly: true` means "fly"; an old "walk" means "run".
+  readonly property string winMove: /^(run|jump|fly)$/.test(String(config.winMove)) ? config.winMove : config.winFly === true ? "fly" : "run"
   readonly property bool winSky: opt("winSky")
   readonly property bool winSenses: opt("winSenses")
   readonly property bool winBreaks: opt("winBreaks")
@@ -214,7 +214,7 @@ Item {
     for (var k in config) c[k] = config[k]
     if (key === "character" && validName(value)) c.character = value
     else if (key === "size" && isFinite(Number(value))) c.size = Math.round(Math.max(minSize, Math.min(maxSize, Number(value))) * 100) / 100
-    else if (key === "winMove" && /^(walk|jump|fly)$/.test(value)) { c.winMove = value; delete c.winFly }
+    else if (key === "winMove" && /^(run|jump|fly)$/.test(value)) { c.winMove = value; delete c.winFly }
     else if (key === "shown" || key === "talk" || views[key] !== undefined) c[key] = value === true || value === "true"
     else return
     config = c
@@ -957,7 +957,7 @@ Item {
     }
 
     // character <name> | size <0.5..2.0> | shown true/false | talk true/false
-    // | winMove walk/jump/fly | winSky, winSenses, winBreaks, deskShow, deskFly, deskAir, deskGames,
+    // | winMove run/jump/fly | winSky, winSenses, winBreaks, deskShow, deskFly, deskAir, deskGames,
     //   deskNotes, deskSenses true/false
     function set(key: string, value: string): void {
       root.setOption(String(key || ""), String(value || ""))

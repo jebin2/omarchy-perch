@@ -28,8 +28,10 @@ PanelWindow {
   readonly property bool onDesktop: perch.desktop && perch.deskShow && buddy.packRoams && !!screen
   // Flying (broom trips, the loop when she says hello) in the view she's in.
   readonly property bool mayFly: buddy.packFlies && (onDesktop ? perch.deskFly : perch.winMove === "fly")
-  // How she moves to a new spot: "walk" (hop only when she must), "jump", "fly".
-  readonly property string moveMode: onDesktop ? (mayFly ? "auto" : "walk") : perch.winMove
+  // How she gets to a new spot: on the desktop she strolls ("desk": walks,
+  // runs far, flies very far if allowed); between windows "run", "jump" or
+  // "fly", as picked in the panel.
+  readonly property string moveMode: onDesktop ? "desk" : perch.winMove
     && perch.desktopMonitor === screen.name
   property real roamLeft: 0
   // Up on the bar (after climbing her ladder): she swings from it.
@@ -314,6 +316,7 @@ PanelWindow {
     : buddy.dragging ? dragBaseTop + buddy.dragOffset.y
     : landing ? dropTop
     : pathTop - Math.min(arcLift, Math.max(0, pathTop - barTop)) + settleDY
+      + (tripRun && tripToSwing ? buddy.seatPad * buddy.s : 0)
   readonly property int liveLeft: Math.round(curLeft)
   readonly property int liveTop: Math.round(curTop)
   property var prevSeat: null
@@ -323,6 +326,10 @@ PanelWindow {
   // slides along), anywhere else on the screen she jumps there in an arc.
   // The offset from her new place shrinks from (walkDX, walkDY) to nothing.
   property real walkDX: 0
+  // A run that isn't along the swing: she's off it (run pose, no ropes)
+  // until she gets there; the swing's padding is kept so nothing jumps.
+  property bool tripRun: false
+  property bool tripToSwing: false
   property real walkDY: 0
   property real walkT: 0
   property real jumpHeight: 0
@@ -360,15 +367,25 @@ PanelWindow {
     walkDX = dx
     walkDY = dy
     walkT = 1
-    var flyNow = mayFly && (moveMode === "fly" ? dist > 250 : dist > 450)
-    // Room above the higher end of the trip, below the bar.
+    var flyNow = mayFly && dist > (moveMode === "fly" ? 250 : 450)
+    // Room above the higher end of the trip, below the bar: a jump needs
+    // some, or it's a flat shuffle in a jumping pose.
     var room = Math.max(0, Math.min(from.top, Math.max(0, wantTop)) - barTop - 6 * buddy.s)
-    if (level && moveMode !== "jump" && !flyNow) {
-      var run = !hanging && Math.abs(dx) >= runFrom
-      var speed = hanging ? slideSpeed : run ? runSpeed : walkSpeed
-      walkAnim.duration = Math.max(400, Math.min(5000, Math.abs(dx) / speed * 1000))
+    var canArc = room >= 30 * buddy.s
+    // Swing to swing under the bar: the swing slides along.
+    var swingSlide = level && from.hanging && hanging
+    // Run: she runs there in any direction. Jump: she jumps (where there's
+    // room to). On the desktop she jumps only up to or down from it.
+    var jumpNow = !flyNow && !swingSlide && canArc && (moveMode === "jump" || (moveMode === "desk" && !level))
+    tripRun = false
+    if (!flyNow && !jumpNow) {
+      var run = !swingSlide && (moveMode !== "desk" || !level || Math.abs(dx) >= runFrom)
+      var speed = swingSlide ? slideSpeed : run ? runSpeed : walkSpeed
+      walkAnim.duration = Math.max(400, Math.min(5000, (swingSlide ? Math.abs(dx) : dist) / speed * 1000))
       buddy.running = run
       buddy.jumping = false
+      tripToSwing = hanging
+      tripRun = !swingSlide && (from.hanging || hanging)
     } else if (flyNow) {
       // Far: on her broom, in a long gentle arc.
       jumpHeight = Math.min(240, 60 + 0.2 * dist, room)
@@ -447,7 +464,7 @@ PanelWindow {
   }
   Connections {
     target: buddy
-    function onWalkingChanged() { if (!buddy.walking) win.peekReturn = false }
+    function onWalkingChanged() { if (!buddy.walking) { win.peekReturn = false; win.tripRun = false } }
   }
   property rect tapRect: Qt.rect(0, 0, 0, 0)
 
@@ -935,7 +952,7 @@ PanelWindow {
     app: win.perch.hasWindow && win.onThisScreen && win.perch.info && typeof win.perch.info.class === "string"
       ? win.perch.info.class : ""
     characterUrl: win.perch.characterUrl
-    hanging: win.perch.hasWindow && win.onThisScreen && win.hanging && win.enterPhase === ""
+    hanging: win.perch.hasWindow && win.onThisScreen && win.hanging && win.enterPhase === "" && !win.tripRun
     onPoked: function(x) { win.flee(x) }
     onWantsToSay: function(line, topic) { win.perch.speakLine(line, true, topic, "") }
     meeting: win.perch.meeting

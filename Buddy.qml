@@ -16,7 +16,9 @@ Item {
   property bool hanging: false
 
   // Rope above her head while on the swing, in grid units.
-  readonly property real pad: hanging ? 7 : 0
+  // Headroom for the swing's ropes when she hangs (grid units).
+  readonly property real seatPad: 7
+  readonly property real pad: hanging ? seatPad : 0
   readonly property real sitHeight: 56 * s
   readonly property real seatY: (56 + pad) * s
   readonly property bool motion: Style.duration(1000) > 0

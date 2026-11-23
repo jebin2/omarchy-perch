@@ -37,7 +37,7 @@ Panel {
   })
   function opt(key) { return config[key] === undefined ? views[key] : config[key] === true }
   property string view: "win"
-  readonly property string winMove: /^(walk|jump|fly)$/.test(String(config.winMove)) ? config.winMove : config.winFly === true ? "fly" : "walk"
+  readonly property string winMove: /^(run|jump|fly)$/.test(String(config.winMove)) ? config.winMove : config.winFly === true ? "fly" : "run"
   readonly property var viewKeys: view === "win"
     ? ["winSky", "winSenses", "winBreaks"]
     : ["deskShow", "deskFly", "deskAir", "deskGames", "deskNotes", "deskSenses"]
@@ -303,7 +303,7 @@ Panel {
           }
           ButtonGroup {
             width: parent.width
-            options: [{ value: "walk", label: strings.t("winMove.walk") }, { value: "jump", label: strings.t("winMove.jump") }, { value: "fly", label: strings.t("winMove.fly") }]
+            options: [{ value: "run", label: strings.t("winMove.run") }, { value: "jump", label: strings.t("winMove.jump") }, { value: "fly", label: strings.t("winMove.fly") }]
             value: root.winMove
             foreground: root.bar.foreground
             fontFamily: root.bar.fontFamily

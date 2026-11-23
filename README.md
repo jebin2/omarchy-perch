@@ -93,7 +93,7 @@ Perch adds a small kiwi icon to the bar. Click it for a panel to:
 
 | Switch | With windows | Empty workspace |
 |---|---|---|
-| Getting to the next window | `winMove`: **`walk`** (hops only to go up or down), `jump`, or `fly` (her broom; she also flies in to say hello) | |
+| Getting to the next window | `winMove`: **`run`** (in any direction, up and down too; on her swing under the bar the swing slides), `jump` (always, when there's room above her), or `fly` (her broom for anything but short trips; she also flies in to say hello) | |
 | Sky trips (a broom loop over the screen now and then) | `winSky`, **off** | part of `deskFly` |
 | Fly on her broom | | `deskFly`, on |
 | Reactions (loud volume, mute, full brightness, notifications) | `winSenses`, on | `deskSenses`, on |
