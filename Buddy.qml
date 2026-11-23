@@ -53,7 +53,42 @@ Item {
 
   // 0 at rest, 1 with her right arm up.
   property real waveAmt: 0
-  readonly property bool happy: waveAmt > 0.4
+  readonly property bool happy: waveAmt > 0.4 && !startled
+
+  // The pointer touched her: a surprised face and a lean the way she goes.
+  property bool startled: false
+  property real lean: 0
+  signal poked(real x)
+
+  function startle(dir) {
+    waveAnim.stop(); waveAmt = 0
+    startled = true
+    leanAnim.stop()
+    leanAnim.dir = dir
+    leanAnim.start()
+    startleEnd.restart()
+  }
+  Timer { id: startleEnd; interval: 700; onTriggered: buddy.startled = false }
+  SequentialAnimation {
+    id: leanAnim
+    property real dir: 1
+    NumberAnimation { target: buddy; property: "lean"; to: 9 * leanAnim.dir; duration: Style.duration(120); easing.type: Easing.OutCubic }
+    NumberAnimation { target: buddy; property: "lean"; to: 0; duration: Style.duration(380); easing.type: Easing.InOutSine }
+  }
+
+  // Only her body takes the pointer; everything else in her window passes
+  // through to what's below.
+  readonly property alias hitBox: hitBox
+  Item {
+    id: hitBox
+    x: 12 * buddy.s
+    y: buddy.pad * buddy.s
+    width: buddy.shown ? 40 * buddy.s : 0
+    height: buddy.shown ? 74 * buddy.s : 0
+    HoverHandler {
+      onHoveredChanged: if (hovered) buddy.poked(point.position.x + hitBox.x)
+    }
+  }
 
   function wave() {
     if (!motion || sleeping) return
@@ -122,7 +157,10 @@ Item {
     id: swingRoot
     width: buddy.width
     height: buddy.height
-    transform: Rotation { origin.x: 32 * buddy.s; origin.y: 0; angle: buddy.swing }
+    transform: [
+      Rotation { origin.x: 32 * buddy.s; origin.y: 0; angle: buddy.swing },
+      Rotation { origin.x: 32 * buddy.s; origin.y: buddy.seatY; angle: buddy.lean }
+    ]
 
   Item {
     id: rig
@@ -211,7 +249,7 @@ Item {
           required property real modelData
           x: modelData; y: 25.6
           width: 4.8; height: 6.6
-          visible: !buddy.happy && buddy.sleepAmt < 0.5
+          visible: buddy.startled || (!buddy.happy && buddy.sleepAmt < 0.5)
           transform: Scale { origin.y: 4.2; yScale: buddy.eyeOpen }
           Rectangle { anchors.fill: parent; radius: 2.4; color: "#2d2347" }
           Rectangle { x: 0.8; y: 3.4; width: 3.2; height: 2.6; radius: 1.3; color: "#7a68c8" }
@@ -231,7 +269,7 @@ Item {
 
       // Mouth.
       Part {
-        visible: !buddy.happy && buddy.sleepAmt < 0.5
+        visible: !buddy.happy && !buddy.startled && buddy.sleepAmt < 0.5
         fill: "transparent"; strokeWidth: 0.8
         d: "M 30 34.2 Q 31 35.6 32 34.2 Q 33 35.6 34 34.2"
       }
@@ -241,7 +279,12 @@ Item {
         d: "M 29.6 33.6 Q 32 38.2 34.4 33.6 Z"
       }
       Part {
-        visible: buddy.sleepAmt >= 0.5
+        visible: buddy.startled
+        fill: "#d4566e"; strokeWidth: 0.8
+        d: "M 30.6 35 A 1.4 1.7 0 1 0 33.4 35 A 1.4 1.7 0 1 0 30.6 35 Z"
+      }
+      Part {
+        visible: buddy.sleepAmt >= 0.5 && !buddy.startled
         fill: "#d4566e"; strokeWidth: 0.7
         d: "M 31.1 34.8 A 0.9 0.8 0 1 0 32.9 34.8 A 0.9 0.8 0 1 0 31.1 34.8 Z"
       }

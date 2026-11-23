@@ -27,10 +27,15 @@ She shows up on the next window you focus. Nothing else to set up.
 - **Naps** after 90 seconds without keyboard or mouse input: eyes closed,
   a sleep bubble and a few z's. While a video is playing (anything that
   keeps the screen awake) she stays up and watches with you.
+- **Gets out of the way:** when the pointer touches her, she scoots along
+  the edge away from it, looking surprised, so you can click whatever was
+  under her (a tab, a button, a bar icon). She drifts back to her corner a
+  few seconds after the pointer has gone.
 - **Hides** on fullscreen windows.
 - Her hoodie follows your theme's accent color.
 
-She is click-through: clicks land on the window under her.
+Only her body takes the pointer; the rest of her little window lets clicks
+through.
 
 ## How it works
 

@@ -1,10 +1,14 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import qs.Commons
 
 // A small transparent layer window that carries Mochi. It stays mapped and
 // only moves, so Hyprland's layer open/close animations never replay; when
-// there is nothing to sit on she just fades out. Clicks pass straight through.
+// there is nothing to sit on she just fades out. Only her body takes the
+// pointer, and when it touches her she scoots along the edge, out of the way,
+// so whatever was under her can be clicked. She drifts back to her corner a
+// few seconds after the pointer has gone.
 PanelWindow {
   id: win
 
@@ -24,9 +28,46 @@ PanelWindow {
     ? perch.winY + perch.borderSize - screenY
     : perch.winY - buddy.seatY - screenY)
 
+  // How far she has scooted left from her corner, px (0 or less).
+  property real dodge: 0
+  property int dodgeMs: 260
+  Behavior on dodge { NumberAnimation { duration: Style.duration(win.dodgeMs); easing.type: Easing.OutCubic } }
+  readonly property real minDodge: -Math.max(0, perch.winW - buddy.width - perch.inset - 8)
+
+  // `x` is where the pointer came in, in her window: she moves away from it,
+  // or the other way when the edge runs out.
+  function flee(x) {
+    var step = buddy.width + 24
+    var dir = x < buddy.width / 2 ? 1 : -1
+    var target = dodge + dir * step
+    if (target > 0 || target < minDodge) target = dodge - dir * step
+    target = Math.max(minDodge, Math.min(0, target))
+    homeTimer.restart()
+    if (Math.abs(target - dodge) < 4) return
+    buddy.startle(target < dodge ? -1 : 1)
+    dodgeMs = 260
+    dodge = target
+  }
+
+  Timer {
+    id: homeTimer
+    interval: 6000
+    onTriggered: {
+      if (win.dodge === 0) return
+      win.dodgeMs = 700
+      win.dodge = 0
+    }
+  }
+
+  function snapHome() {
+    homeTimer.stop()
+    dodgeMs = 0
+    dodge = 0
+  }
+
   anchors.top: true
   anchors.left: true
-  margins.left: here ? Math.max(0, Math.min(wantLeft, screenW - buddy.width)) : 0
+  margins.left: here ? Math.max(0, Math.min(Math.round(wantLeft + dodge), screenW - buddy.width)) : 0
   margins.top: here ? Math.max(0, wantTop) : 0
 
   implicitWidth: Math.ceil(buddy.width)
@@ -34,14 +75,14 @@ PanelWindow {
 
   color: "transparent"
   exclusionMode: ExclusionMode.Ignore
-  mask: Region {}
+  mask: Region { item: buddy.hitBox }
   WlrLayershell.namespace: "jebin2-perch"
   WlrLayershell.layer: WlrLayer.Top
   WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
   Connections {
     target: win.perch
-    function onArrived() { if (win.here) buddy.arrive() }
+    function onArrived() { win.snapHome(); if (win.here) buddy.arrive() }
   }
 
   Buddy {
@@ -50,5 +91,6 @@ PanelWindow {
     shown: win.here
     sleeping: win.perch.sleeping
     hanging: win.here && win.hanging
+    onPoked: function(x) { win.flee(x) }
   }
 }
