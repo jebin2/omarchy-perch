@@ -83,9 +83,25 @@ Perch adds a small kiwi icon to the bar. Click it for a panel to:
 - turn her speech bubbles on or off,
 - pick a character (Mochi, or your own packs; see [CHARACTERS.md](CHARACTERS.md)),
 - change her size (50–200%),
+- choose what she does **with windows open** and **on an empty workspace**
+  (each its own set of switches, below),
 - start a focus timer (25, 50 or 90 min): she stays put and quiet, shows a
   little countdown, and holds up a break sign at the end,
-- make her wave, think, yawn, stretch or fall.
+- see, add and take down sticky notes,
+- make her wave, think, yawn, stretch, fall or fly (even with flying off),
+  plus every move her character offers (Mochi's or your own pack's).
+
+| Switch | With windows | Empty workspace |
+|---|---|---|
+| Getting to the next window | `winMove`: **`walk`** (hops only to go up or down), `jump`, or `fly` (her broom; she also flies in to say hello) | |
+| Sky trips (a broom loop over the screen now and then) | `winSky`, **off** | part of `deskFly` |
+| Fly on her broom | | `deskFly`, on |
+| Reactions (loud volume, mute, full brightness, notifications) | `winSenses`, on | `deskSenses`, on |
+| Break reminders | `winBreaks`, on | |
+| Come to the empty workspace | | `deskShow`, on |
+| Weather and seasons (rain, snow, leaves, petals, fireflies, shooting stars) | | `deskAir`, on |
+| Games (hide and seek, if her character has it) | | `deskGames`, on |
+| Sticky notes pinned on the desktop | | `deskNotes`, on |
 
 The panel saves to `~/.config/perch/config.json`, which you can also edit:
 
@@ -94,7 +110,8 @@ The panel saves to `~/.config/perch/config.json`, which you can also edit:
 ```
 
 From a script or a key binding: `omarchy-shell jebin2.perch set size 1.2`
-(also `character <name>`, `shown true|false`, `talk true|false`), and
+(also `character <name>`, `shown true|false`, `talk true|false`, and any
+switch above, like `set winSky true` or `set winMove fly`), and
 `omarchy-shell jebin2.perch toggle` to hide or show her.
 
 ## What she says

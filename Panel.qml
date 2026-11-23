@@ -6,8 +6,9 @@ import qs.Commons
 import qs.Commons as Commons
 
 // Perch's bar icon. Click for a panel to pick her character, change her
-// size, hide her or keep her quiet, and make her do a move; right-click hides
-// or shows her.
+// size, hide her or keep her quiet, choose what she does with windows open
+// and on an empty workspace, start a focus timer, pin or take down sticky
+// notes, and make her do a move; right-click hides or shows her.
 //
 // The panel only reads ~/.config/perch/config.json; every change goes to the
 // Perch service with `omarchy-shell jebin2.perch set …`, which writes it.
@@ -28,6 +29,57 @@ Panel {
   readonly property real size: isFinite(Number(config.size)) && Number(config.size) > 0 ? Number(config.size) : 0.9
   readonly property bool shown: config.shown !== false
   readonly property bool talk: config.talk !== false
+
+  // Per-view switches (same defaults as the service).
+  readonly property var views: ({
+    "winSky": false, "winSenses": true, "winBreaks": true,
+    "deskShow": true, "deskFly": true, "deskAir": true, "deskGames": true, "deskNotes": true, "deskSenses": true
+  })
+  function opt(key) { return config[key] === undefined ? views[key] : config[key] === true }
+  property string view: "win"
+  readonly property string winMove: /^(walk|jump|fly)$/.test(String(config.winMove)) ? config.winMove : config.winFly === true ? "fly" : "walk"
+  readonly property var viewKeys: view === "win"
+    ? ["winSky", "winSenses", "winBreaks"]
+    : ["deskShow", "deskFly", "deskAir", "deskGames", "deskNotes", "deskSenses"]
+
+  // Sticky notes: the service keeps them in ~/.config/perch/notes.json.
+  property var notes: []
+  FileView {
+    path: root.home + "/.config/perch/notes.json"
+    watchChanges: true
+    printErrors: false
+    onLoaded: { try { var l = JSON.parse(text()); root.notes = Array.isArray(l) ? l : [] } catch (e) { root.notes = [] } }
+    onLoadFailed: root.notes = []
+    onFileChanged: reload()
+  }
+  // Moves her character adds (the service writes them when it loads her).
+  property var packMoves: []
+  property bool packFlies: false
+  FileView {
+    path: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/perch-moves.json"
+    watchChanges: true
+    printErrors: false
+    onLoaded: {
+      try {
+        var o = JSON.parse(text())
+        root.packMoves = Array.isArray(o.moves) ? o.moves : []
+        root.packFlies = o.flies === true
+      } catch (e) { root.packMoves = []; root.packFlies = false }
+    }
+    onLoadFailed: { root.packMoves = []; root.packFlies = false }
+    onFileChanged: reload()
+  }
+  readonly property var moves: {
+    var l = ["wave", "think", "yawn", "stretch", "fall"].map(function(m) { return { id: m, label: strings.t("move." + m) } })
+    if (packFlies) l.push({ id: "fly", label: strings.t("move.fly") })
+    for (var i = 0; i < packMoves.length; i++) {
+      var m = packMoves[i]
+      if (m && /^[a-z][a-z0-9_-]{0,31}$/.test(String(m.id)) && !l.some(function(x) { return x.id === m.id }))
+        l.push({ id: String(m.id), label: String(m.label || m.id).slice(0, 24) })
+    }
+    return l
+  }
+  function shell(args) { Quickshell.execDetached(["omarchy-shell", "jebin2.perch"].concat(args)) }
 
   // Built-in packs, then the user's own from ~/.config/perch/characters.
   property var userPacks: []
@@ -131,13 +183,22 @@ Panel {
     open: root.opened
     focusTarget: panel.loadedContent
     contentWidth: panel.fittedContentWidth(Style.space(380))
-    contentHeight: panel.fittedContentHeight(panel.loadedContentHeight, Style.space(640))
+    contentHeight: panel.fittedContentHeight(panel.loadedContentHeight, Style.space(820))
 
     content: PanelKeyCatcher {
       implicitHeight: column.implicitHeight
       anchors.fill: parent
       onCloseRequested: root.close()
       onTabRequested: function(direction) { root.switchPanel(direction) }
+
+      // Scrolls when the screen is too short for all of it.
+      Flickable {
+        anchors.fill: parent
+        contentWidth: width
+        contentHeight: column.implicitHeight
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
+        interactive: contentHeight > height
 
       Column {
         id: column
@@ -213,6 +274,61 @@ Panel {
 
         PanelSectionHeader {
           width: parent.width
+          text: strings.t("views")
+          foreground: root.bar.foreground
+          fontFamily: root.bar.fontFamily
+        }
+
+        ButtonGroup {
+          width: parent.width
+          options: [{ value: "win", label: strings.t("view.win") }, { value: "desk", label: strings.t("view.desk") }]
+          value: root.view
+          foreground: root.bar.foreground
+          fontFamily: root.bar.fontFamily
+          onChanged: function(v) { root.view = v }
+        }
+
+        // With windows: how she gets to the next one.
+        Column {
+          visible: root.view === "win"
+          width: parent.width
+          spacing: Style.space(6)
+          Text {
+            textFormat: Text.PlainText
+            text: strings.t("winMove")
+            color: Qt.darker(root.bar.foreground, 1.4)
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.caption
+            font.bold: true
+          }
+          ButtonGroup {
+            width: parent.width
+            options: [{ value: "walk", label: strings.t("winMove.walk") }, { value: "jump", label: strings.t("winMove.jump") }, { value: "fly", label: strings.t("winMove.fly") }]
+            value: root.winMove
+            foreground: root.bar.foreground
+            fontFamily: root.bar.fontFamily
+            onChanged: function(v) { root.set("winMove", v) }
+          }
+        }
+
+        Repeater {
+          model: root.viewKeys
+          delegate: Toggle {
+            required property string modelData
+            width: column.width
+            label: strings.t("opt." + modelData)
+            description: strings.t("opt." + modelData + ".description")
+            checked: root.opt(modelData)
+            enabled: root.shown && (modelData === "deskShow" || modelData.indexOf("desk") !== 0 || root.opt("deskShow") || modelData === "deskNotes")
+            opacity: enabled ? 1.0 : 0.5
+            foreground: root.bar.foreground
+            fontFamily: root.bar.fontFamily
+            onClicked: root.set(modelData, !root.opt(modelData))
+          }
+        }
+
+        PanelSectionHeader {
+          width: parent.width
           text: root.focusLeft > 0
             ? strings.t("focus.left").arg(Math.floor(root.focusLeft / 60) + ":" + ("0" + root.focusLeft % 60).slice(-2))
             : strings.t("focus")
@@ -240,6 +356,60 @@ Panel {
 
         PanelSectionHeader {
           width: parent.width
+          text: root.notes.length > 0 ? strings.t("notes.count").arg(root.notes.length) : strings.t("notes")
+          foreground: root.bar.foreground
+          fontFamily: root.bar.fontFamily
+        }
+
+        Repeater {
+          model: root.notes.slice(0, 8)
+          delegate: Item {
+            required property var modelData
+            required property int index
+            width: column.width
+            height: Math.max(noteText.implicitHeight, noteDone.implicitHeight)
+            Text {
+              id: noteText
+              anchors.left: parent.left
+              anchors.right: noteDone.left
+              anchors.rightMargin: Style.space(8)
+              anchors.verticalCenter: parent.verticalCenter
+              textFormat: Text.PlainText
+              text: "\uD83D\uDCDD " + modelData.text + (Number(modelData.due) > 0 ? "  \u00B7 " + Qt.formatTime(new Date(Number(modelData.due)), "h:mm AP") : "")
+              color: root.bar.foreground
+              font.family: root.bar.fontFamily
+              font.pixelSize: Style.font.body
+              elide: Text.ElideRight
+            }
+            Button {
+              id: noteDone
+              anchors.right: parent.right
+              anchors.verticalCenter: parent.verticalCenter
+              text: "\u2715"
+              foreground: root.bar.foreground
+              fontFamily: root.bar.fontFamily
+              bordered: true
+              onClicked: root.shell(["unnote", String(index + 1)])
+            }
+          }
+        }
+
+        TextField {
+          id: noteInput
+          width: parent.width
+          placeholderText: strings.t("notes.placeholder")
+          foreground: root.bar.foreground
+          font.family: root.bar.fontFamily
+          maximumLength: 140
+          onAccepted: {
+            var t = text.trim()
+            if (t) root.shell(["note", t])
+            text = ""
+          }
+        }
+
+        PanelSectionHeader {
+          width: parent.width
           text: strings.t("moves")
           foreground: root.bar.foreground
           fontFamily: root.bar.fontFamily
@@ -249,25 +419,20 @@ Panel {
           width: parent.width
           spacing: Style.space(6)
           Repeater {
-            model: [
-              { move: "wave" },
-              { move: "think" },
-              { move: "yawn" },
-              { move: "stretch" },
-              { move: "fall" }
-            ]
+            model: root.moves
             delegate: Button {
               required property var modelData
-              text: strings.t("move." + modelData.move)
+              text: modelData.label
               enabled: root.shown
               opacity: enabled ? 1.0 : 0.5
               foreground: root.bar.foreground
               fontFamily: root.bar.fontFamily
               bordered: true
-              onClicked: root.act(modelData.move)
+              onClicked: root.act(modelData.id)
             }
           }
         }
+      }
       }
     }
   }

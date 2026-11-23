@@ -81,6 +81,12 @@ Item {
   // `focusing` she stays put and keeps quiet; `focusLeft` is in seconds.
   // `focusStarted` / `focusDone` fire at the ends.
   property bool focusing: false
+  // Games on the desktop (hide and seek) are allowed; packs check it.
+  property bool games: true
+  // Extra moves the pack offers in the bar panel: [{ "id": "dance", "label": "Dance" }, …].
+  // Each id comes back as an `act` (see `action` below).
+  readonly property var packMoves: character.item && Array.isArray(character.item.moves)
+    ? character.item.moves.filter(function(m) { return m && /^[a-z][a-z0-9_-]{0,31}$/.test(String(m.id)) }).slice(0, 40) : []
   property int focusLeft: 0
   signal focusStarted(int minutes)
   // She came in from off screen (login, waking the laptop, back after a long

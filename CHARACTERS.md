@@ -85,6 +85,8 @@ Bind your pieces' rotations and visibility to these; Perch animates them.
 | `sensed(kind, app)` | She noticed `"loud"`, `"mute"`, `"bright"` or `"notify"` (`app` = the app's name). Set `senses: true` on the pack's root to react yourself; otherwise Perch says a line |
 | `weather` (on the pack's root) | `"rain"` or `"snow"`: Perch lets it fall across the empty workspace |
 | `stay` (on the pack's root) | `true` while she's busy at something on the desktop: she doesn't wander off |
+| `moves` (on the pack's root) | `[{ "id": "dance", "label": "Dance" }, …]`: extra buttons in the panel's "Make her…"; each sends that id as an `act` (see `action`) |
+| `games` | False when the user turned games off for the empty workspace: don't start one (and end one that's running) |
 | `focusing`, `focusLeft`, `focusStarted(min)`, `focusDone(min)` | The focus timer runs (seconds left): Perch keeps her quiet and in place; a pack can show a calm pose |
 | `meeting` | The mic or camera is in use: Perch keeps her quiet |
 | `music`, `movie` | A music player is playing; a video player (or a browser on a video site) is playing |

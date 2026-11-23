@@ -151,7 +151,29 @@ Item {
   //
   // ~/.config/perch/config.json, all optional:
   //   { "character": "mochi", "size": 0.9, "shown": true, "talk": true }
+  // plus on/off switches for each view (see `views` below).
   // Read on every save; the bar panel writes it through the `set` command.
+
+  // What she does with windows open ("win…") and on an empty workspace
+  // ("desk…"). Flying around between windows is off unless you want it.
+  readonly property var views: ({
+    "winSky": false, "winSenses": true, "winBreaks": true,
+    "deskShow": true, "deskFly": true, "deskAir": true, "deskGames": true, "deskNotes": true, "deskSenses": true
+  })
+  function opt(key) { return config[key] === undefined ? views[key] : config[key] === true }
+  // How she gets to the next window: "walk" (hops only to go up or down),
+  // "jump", or "fly" (on her broom; also the hello loop). An old
+  // `winFly: true` means "fly".
+  readonly property string winMove: /^(walk|jump|fly)$/.test(String(config.winMove)) ? config.winMove : config.winFly === true ? "fly" : "walk"
+  readonly property bool winSky: opt("winSky")
+  readonly property bool winSenses: opt("winSenses")
+  readonly property bool winBreaks: opt("winBreaks")
+  readonly property bool deskShow: opt("deskShow")
+  readonly property bool deskFly: opt("deskFly")
+  readonly property bool deskAir: opt("deskAir")
+  readonly property bool deskGames: opt("deskGames")
+  readonly property bool deskNotes: opt("deskNotes")
+  readonly property bool deskSenses: opt("deskSenses")
 
   readonly property real minSize: 0.5
   readonly property real maxSize: 2.0
@@ -192,7 +214,8 @@ Item {
     for (var k in config) c[k] = config[k]
     if (key === "character" && validName(value)) c.character = value
     else if (key === "size" && isFinite(Number(value))) c.size = Math.round(Math.max(minSize, Math.min(maxSize, Number(value))) * 100) / 100
-    else if (key === "shown" || key === "talk") c[key] = value === true || value === "true"
+    else if (key === "winMove" && /^(walk|jump|fly)$/.test(value)) { c.winMove = value; delete c.winFly }
+    else if (key === "shown" || key === "talk" || views[key] !== undefined) c[key] = value === true || value === "true"
     else return
     config = c
     applyConfig()
@@ -388,7 +411,7 @@ Item {
     running: !root.sleeping
     onTriggered: {
       root.activeMinutes++
-      if (root.activeMinutes < root.breakAfterMin || !root.talk || !root.hasWindow || root.meeting) return
+      if (root.activeMinutes < root.breakAfterMin || !root.talk || !root.hasWindow || !root.winBreaks || root.meeting) return
       // She stretches, then holds the reminder up (or says it).
       root.activeMinutes = 0
       root.act("stretch")
@@ -456,6 +479,7 @@ Item {
   property var lastSense: ({})
   function senseOnce(kind, app, gapMs) {
     if (!settled || !shown || meeting || focusing || sleeping) return
+    if (desktop ? !deskSenses : !winSenses) return
     var now = Date.now()
     if (now - (lastSense[kind] || 0) < gapMs) return
     var o = lastSense; o[kind] = now; lastSense = o
@@ -933,6 +957,8 @@ Item {
     }
 
     // character <name> | size <0.5..2.0> | shown true/false | talk true/false
+    // | winMove walk/jump/fly | winSky, winSenses, winBreaks, deskShow, deskFly, deskAir, deskGames,
+    //   deskNotes, deskSenses true/false
     function set(key: string, value: string): void {
       root.setOption(String(key || ""), String(value || ""))
     }

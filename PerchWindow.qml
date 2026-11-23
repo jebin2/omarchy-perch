@@ -25,7 +25,11 @@ PanelWindow {
   // An empty workspace: a character that can roam lives on the bottom of
   // the screen. Every 6-14 s she may walk (or run) somewhere; the pack
   // decides what she does in between. Opening a window, she jumps up on it.
-  readonly property bool onDesktop: perch.desktop && buddy.packRoams && !!screen
+  readonly property bool onDesktop: perch.desktop && perch.deskShow && buddy.packRoams && !!screen
+  // Flying (broom trips, the loop when she says hello) in the view she's in.
+  readonly property bool mayFly: buddy.packFlies && (onDesktop ? perch.deskFly : perch.winMove === "fly")
+  // How she moves to a new spot: "walk" (hop only when she must), "jump", "fly".
+  readonly property string moveMode: onDesktop ? (mayFly ? "auto" : "walk") : perch.winMove
     && perch.desktopMonitor === screen.name
   property real roamLeft: 0
   // Up on the bar (after climbing her ladder): she swings from it.
@@ -66,7 +70,7 @@ PanelWindow {
   }
   // A joyride on her broom, along the desktop.
   function flyTo(x) {
-    if (enterPhase !== "") return
+    if (enterPhase !== "" || !mayFly) return
     var from = curLeft
     roamLeft = clampLeft(x)
     var dx = from - roamLeft
@@ -114,8 +118,8 @@ PanelWindow {
       if (buddy.climbing || win.deskSpot === "bar") return
       var r = Math.random()
       var x = Math.random() * (win.screenW - buddy.width)
-      if (r < 0.13 && buddy.packFlies) win.skyTrip()
-      else if (r < 0.18 && buddy.packFlies && Math.abs(x - win.curLeft) > 300) win.flyTo(x)
+      if (r < 0.13 && win.mayFly) win.skyTrip()
+      else if (r < 0.18 && win.mayFly && Math.abs(x - win.curLeft) > 300) win.flyTo(x)
       else if (r < 0.23 && buddy.packClimbs && win.floorTop - win.barTop > 200) win.climb(true)
       else if (r < 0.55 && Math.abs(x - win.curLeft) > 80) win.roamTo(x, false)
     }
@@ -353,13 +357,14 @@ PanelWindow {
     walkDX = dx
     walkDY = dy
     walkT = 1
-    if (level) {
+    var flyNow = mayFly && (moveMode === "fly" ? dist > 250 : dist > 450)
+    if (level && moveMode !== "jump" && !flyNow) {
       var run = !hanging && Math.abs(dx) >= runFrom
       var speed = hanging ? slideSpeed : run ? runSpeed : walkSpeed
       walkAnim.duration = Math.max(400, Math.min(5000, Math.abs(dx) / speed * 1000))
       buddy.running = run
       buddy.jumping = false
-    } else if (buddy.packFlies && dist > 450) {
+    } else if (flyNow) {
       // Far: on her broom, in a long gentle arc.
       jumpHeight = Math.min(240, 60 + 0.2 * dist)
       flyWaves = Math.max(1, Math.round(dist / 350))
@@ -449,7 +454,7 @@ PanelWindow {
     if (!((perch.hasWindow && onThisScreen) || onDesktop)) return
     var right = Math.random() < 0.5
     enterKind = kind
-    if (buddy.packFlies) {
+    if (mayFly) {
       // On her broom: in from the side, a loop in the middle of the screen,
       // a hover there while she says hello, then off to her place.
       startFlight(right ? screenW + 30 : -buddy.width - 30, screenH * 0.18,
@@ -466,8 +471,8 @@ PanelWindow {
 
   // A sky trip on the desktop: up from the floor, a loop or two somewhere
   // in the sky, a hover, then down somewhere else on the floor.
-  function skyTrip() {
-    if (!onDesktop || !buddy.packFlies || enterPhase !== "" || buddy.walking || buddy.dragging || buddy.climbing || deskSpot !== "floor") return
+  function skyTrip(asked) {
+    if (!onDesktop || !(asked ? buddy.packFlies : mayFly) || enterPhase !== "" || buddy.walking || buddy.dragging || buddy.climbing || deskSpot !== "floor") return
     var r = Math.min(200, screenW * 0.06 + Math.random() * screenW * 0.07)
     var cx = r + 20 + Math.random() * Math.max(1, screenW - buddy.width - 2 * r - 40)
     var top = Math.max(barTop + 20, 0) + 0.5 * r
@@ -475,6 +480,28 @@ PanelWindow {
     enterKind = "sky"
     startFlight(curLeft, curTop, cx, cy, r, Math.random() < 0.5 ? -1 : 1, Math.random() < 0.35 ? 2 : 1,
                 2500 + Math.random() * 4500, 1100 + Math.min(1200, Math.abs(cy - curTop) * 1.5))
+  }
+
+  // Asked to fly while on a window: a loop in the middle of the screen, a
+  // hover, and back to her window.
+  function windowFly() {
+    if (!buddy.packFlies || !(perch.hasWindow && onThisScreen) || enterPhase !== "" || buddy.walking || buddy.dragging || falling || pin) return
+    enterKind = "sky"
+    startFlight(curLeft, curTop, screenW / 2 - buddy.width / 2, screenH * 0.34 - buddy.height / 2,
+                Math.min(180, screenW * 0.11), Math.random() < 0.5 ? -1 : 1, 1, 2500, 1100)
+  }
+
+  // Sky trips with windows open, if you want them: now and then a loop
+  // over the screen and back to her window.
+  Timer {
+    interval: 240000
+    repeat: true
+    running: win.perch.winSky && buddy.packFlies && win.perch.hasWindow && win.onThisScreen && !win.perch.sleeping
+    onTriggered: {
+      interval = 180000 + Math.random() * 300000
+      if (win.perch.focusing || buddy.meeting || bubble.active || buddy.hanging && Math.random() < 0.5) return
+      win.windowFly()
+    }
   }
 
   // One broom flight: from (x, y) to the edge of a loop around (cx, cy),
@@ -614,8 +641,9 @@ PanelWindow {
     }
 
     function onAct(what) {
-      if (!(win.perch.hasWindow && win.onThisScreen)) return
-      if (what === "wave") buddy.wave()
+      if (!(win.perch.hasWindow && win.onThisScreen) && !win.onDesktop) return
+      if (what === "fly") { if (win.onDesktop) win.skyTrip(true); else win.windowFly() }
+      else if (what === "wave") buddy.wave()
       else if (what === "yawn") buddy.yawn()
       else if (what === "stretch") buddy.stretch()
       else if (what === "think") buddy.think()
@@ -629,6 +657,25 @@ PanelWindow {
     onTriggered: win.falling = false
   }
 
+  // What the panel can ask her to do: the pack's own moves, and whether
+  // she has a broom. The bar panel reads this file.
+  FileView {
+    id: movesFile
+    path: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/perch-moves.json"
+    printErrors: false
+  }
+  Timer {
+    id: movesWrite
+    interval: 600
+    running: true
+    onTriggered: if (win.screen === Quickshell.screens[0]) movesFile.setText(JSON.stringify({ flies: buddy.packFlies, moves: buddy.packMoves }) + "\n")
+  }
+  Connections {
+    target: buddy
+    function onPackMovesChanged() { movesWrite.restart() }
+    function onPackFliesChanged() { movesWrite.restart() }
+  }
+
   // Rain or snow across the empty workspace, when her pack says it's
   // falling outside; leaves, petals or snowflakes drifting; fireflies by
   // the camp. Only on the desktop while you're here (Drift.qml: a few
@@ -638,7 +685,7 @@ PanelWindow {
     for (var i = 0; i < l.length; i++) if (l[i] === kind || (l[i] && l[i].kind === kind)) return l[i]
     return null
   }
-  readonly property bool airOn: onDesktop && !perch.sleeping
+  readonly property bool airOn: onDesktop && perch.deskAir && !perch.sleeping
   Loader {
     anchors.fill: parent
     active: win.airOn && buddy.weather !== ""
@@ -673,7 +720,7 @@ PanelWindow {
   Timer {
     interval: 60000
     repeat: true
-    running: win.onDesktop && !win.perch.sleeping && win.ambientHas("stars") !== null
+    running: win.airOn && win.ambientHas("stars") !== null
     onTriggered: {
       interval = 120000 + Math.random() * 240000
       shootingStar.go()
@@ -742,7 +789,7 @@ PanelWindow {
   // under the bar on the desktop. Click one to take it down.
   Row {
     id: noteBoard
-    visible: win.onDesktop && win.perch.notes.length > 0
+    visible: win.perch.desktop && win.perch.deskNotes && !!win.screen && win.perch.notes.length > 0
     x: 18
     y: win.barTop + 14
     spacing: 12
@@ -892,6 +939,7 @@ PanelWindow {
     music: win.perch.music
     movie: win.perch.movie
     focusing: win.perch.focusing
+    games: win.perch.deskGames
     focusLeft: win.perch.focusLeft
     windowTitle: win.onThisScreen ? win.perch.windowTitle : ""
     onDraggingChanged: if (dragging) win.startDrag()
