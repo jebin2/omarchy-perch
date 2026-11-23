@@ -507,7 +507,8 @@ Item {
   }
 
   // `omarchy-shell jebin2.perch say "text"` makes her say something;
-  // `omarchy-shell jebin2.perch act wave|yawn|stretch|think|fall` plays a move.
+  // `omarchy-shell jebin2.perch act wave|yawn|stretch|think|fall` plays a move;
+  // other names (e.g. `act cheer`) go to the character pack.
   ShellIpc {
     target: "jebin2.perch"
 
@@ -519,7 +520,7 @@ Item {
     function act(what: string): void {
       var move = String(what || "")
       if (move === "fall") { root.fallPending = true; root.fell(true); arrivalDelay.interval = 700; arrivalDelay.restart() }
-      else if (["wave", "yawn", "stretch", "think"].indexOf(move) >= 0) root.act(move)
+      else if (/^[a-z][a-z0-9_-]{0,31}$/.test(move)) root.act(move)
     }
 
     // character <name> | size <0.5..1.6> | shown true/false | talk true/false

@@ -127,7 +127,7 @@ PanelWindow {
     function onSay(line, topic, mood) {
       if (!(win.perch.hasWindow && win.onThisScreen && !win.falling)) return
       bubble.show(line)
-      buddy.heard(topic, mood)
+      buddy.heard(topic, mood, line)
     }
 
     function onAct(what) {
@@ -136,6 +136,7 @@ PanelWindow {
       else if (what === "yawn") buddy.yawn()
       else if (what === "stretch") buddy.stretch()
       else if (what === "think") buddy.think()
+      else buddy.did(what)
     }
   }
 
@@ -159,6 +160,8 @@ PanelWindow {
     sleeping: win.perch.sleeping
     thrifty: win.perch.onBattery
     talking: bubble.active
+    app: win.perch.hasWindow && win.onThisScreen && win.perch.info && typeof win.perch.info.class === "string"
+      ? win.perch.info.class : ""
     characterUrl: win.perch.characterUrl
     hanging: win.perch.hasWindow && win.onThisScreen && win.hanging
     onPoked: function(x) { win.flee(x) }

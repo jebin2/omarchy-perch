@@ -66,7 +66,9 @@ Bind your pieces' rotations and visibility to these; Perch animates them.
 | `thinkAmt` | 0..1: chin-on-hand pose during some calm spells (optional; ignore it if your character has no such pose) |
 | `hanging` | On the swing (draw the seat) |
 | `talking` | A speech bubble is showing (for a talking mouth) |
-| `topic`, `mood`, `lineCount` | The last line she said: its kind (a `lines.json` section such as `battery_low`, `window_closed`, `break`, `charging`; a time of day such as `morning` or `noon`; `app`, `chatter`, `wake`, `yawn`, `theme`; `say` for the IPC command), the mood it came from (`serious`, `fun`, `sassy`, or empty), and a counter that goes up with every line: react in `onLineCountChanged` |
+| `topic`, `mood`, `line`, `lineCount` | The last line she said: its kind (a `lines.json` section such as `battery_low`, `window_closed`, `break`, `charging`; a time of day such as `morning` or `noon`; `app`, `chatter`, `wake`, `yawn`, `theme`; `say` for the IPC command), the mood it came from (`serious`, `fun`, `sassy`, or empty), its text, and a counter that goes up with every line: react in `onLineCountChanged` |
+| `app` | The class of the window she sits on (`kitty`, `spotify`, `discord`…), or empty: show a pose for the app |
+| `action`, `actionCount` | A move asked for with `act <name>` that Perch doesn't do itself (e.g. `act cheer`), and a counter that goes up every time: react in `onActionCountChanged` |
 | `calm`, `sleeping` | Between leg-swinging bursts; napping |
 | `startled`, `startleDir` | The pointer touched her; she scoots left (`-1`) or right (`1`) |
 | `waveAmt`, `yawnAmt`, `stretchAmt` | 0..1 while she waves, yawns or stretches |
@@ -100,4 +102,5 @@ whole character when she falls off, and handles the speech bubble.
 - Background plugins don't hot-reload: run `omarchy restart shell` after
   editing a pack (switching packs in `config.json` does apply live).
 - Test the moves with `omarchy-shell jebin2.perch act wave` (also `yawn`,
-  `stretch`, `think`, `fall`).
+  `stretch`, `think`, `fall`); any other name reaches the pack as
+  `buddy.action`.

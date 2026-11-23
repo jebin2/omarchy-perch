@@ -42,8 +42,20 @@ Item {
   // with every line, so a pack can react to each one.
   property string topic: ""
   property string mood: ""
+  property string line: ""
   property int lineCount: 0
-  function heard(t, m) { topic = t || ""; mood = m || ""; lineCount++ }
+  function heard(t, m, l) { topic = t || ""; mood = m || ""; line = l || ""; lineCount++ }
+
+  // The focused window's class (e.g. "kitty", "spotify"), or "" when she
+  // isn't on a window here.
+  property string app: ""
+
+  // A move asked for with `omarchy-shell jebin2.perch act <name>` that Perch
+  // doesn't do itself (e.g. "cheer"): a pack can play it. `actionCount` goes
+  // up every time, so a pack can react in `onActionCountChanged`.
+  property string action: ""
+  property int actionCount: 0
+  function did(what) { action = what || ""; actionCount++ }
 
   // Thinking: during some calm spells she rests her chin on her hand.
   // 0..1; a pack that has the pose uses it, others ignore it.

@@ -111,8 +111,11 @@ case-insensitively, as regular expressions. The sections are `app`, `time`
 
 ```bash
 omarchy-shell jebin2.perch say "build passed! 🎉"
-omarchy-shell jebin2.perch act wave      # also: yawn, stretch, fall
+omarchy-shell jebin2.perch act wave      # also: yawn, stretch, think, fall
 ```
+
+Other names (lowercase letters, digits, `-`, `_`) go to the character pack,
+which can play its own move for them, e.g. `act cheer`. Mochi ignores them.
 
 Handy at the end of a long script.
 
