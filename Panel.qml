@@ -53,7 +53,7 @@ Panel {
   property real focusEnd: 0
   property real clock: Date.now()
   readonly property int focusLeft: focusEnd > clock ? Math.ceil((focusEnd - clock) / 1000) : 0
-  function focus(minutes) {
+  function runFocus(minutes) {
     Quickshell.execDetached(["omarchy-shell", "jebin2.perch", "focus", String(minutes)])
   }
   FileView {
@@ -233,7 +233,7 @@ Panel {
               foreground: root.bar.foreground
               fontFamily: root.bar.fontFamily
               bordered: true
-              onClicked: root.focus(modelData)
+              onClicked: root.runFocus(modelData)
             }
           }
         }
