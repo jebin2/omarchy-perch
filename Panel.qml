@@ -45,8 +45,8 @@ Panel {
   property string view: "win"
   readonly property string winMove: /^(run|jump|fly)$/.test(String(config.winMove)) ? config.winMove : config.winFly === true ? "fly" : "run"
   readonly property var viewKeys: view === "win"
-    ? ["winSky", "winSenses", "winBreaks"]
-    : ["deskShow", "deskFly", "deskAir", "deskGames", "deskNotes", "deskSenses"]
+    ? ["winSky"]
+    : ["deskShow", "deskFly", "deskAir", "deskGames", "deskNotes"]
 
   // Sticky notes: the service keeps them in ~/.config/perch/notes.json.
   property var notes: []

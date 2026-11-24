@@ -96,8 +96,6 @@ Perch adds a small kiwi icon to the bar. Click it for a panel to:
 | Getting to the next window | `winMove`: **`run`** (in any direction, up and down too; on her swing under the bar the swing slides), `jump` (every trip up or down; side to side when there's room above her), or `fly` (her broom for every trip, flat along the bar when there is no room above; she also flies in to say hello) | |
 | Sky trips (a broom loop over the screen now and then) | `winSky`, **off** | part of `deskFly` |
 | Fly on her broom | | `deskFly`, on |
-| Reactions (volume and brightness up/down, mute, screenshots, notifications) | `winSenses`, on | `deskSenses`, on |
-| Break reminders | `winBreaks`, on | |
 | Come to the empty workspace | | `deskShow`, on |
 | Weather and seasons (rain, snow, leaves, petals, fireflies, shooting stars) | | `deskAir`, on |
 | Games (hide and seek, if her character has it) | | `deskGames`, on |
@@ -108,6 +106,11 @@ Her **Attitude** (`attitude`) applies everywhere: `sweet` (never sassy),
 most of the time), or `loop` (all four in turn, 15 minutes each; the panel
 shows which one is on). Characters that know it also roll their eyes, flip their
 hair and check their nails more the sassier she is.
+
+She always reacts to volume and brightness changes, mute, screenshots and
+notifications, and reminds you to take a break after an hour at the screen.
+To turn those off, set `"winSenses": false` (on windows), `"deskSenses":
+false` (empty workspace) or `"winBreaks": false` in the config file.
 
 The panel saves to `~/.config/perch/config.json`, which you can also edit:
 
