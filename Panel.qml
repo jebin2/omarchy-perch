@@ -33,7 +33,7 @@ Panel {
   // Per-view switches (same defaults as the service).
   readonly property var views: ({
     "winSky": false, "winSenses": true, "winBreaks": true,
-    "deskShow": true, "deskFly": true, "deskAir": true, "deskGames": true, "deskNotes": true, "deskSenses": true
+    "deskShow": true, "deskFly": true, "deskAir": true, "deskGames": true, "deskNotes": true, "deskSenses": true, "deskClouds": true
   })
   function opt(key) { return config[key] === undefined ? views[key] : config[key] === true }
   readonly property string shots: config.shots === "hide" ? "hide" : "pose"
@@ -46,7 +46,7 @@ Panel {
   readonly property string winMove: /^(run|jump|fly)$/.test(String(config.winMove)) ? config.winMove : config.winFly === true ? "fly" : "run"
   readonly property var viewKeys: view === "win"
     ? ["winSky"]
-    : ["deskShow", "deskFly", "deskAir", "deskGames", "deskNotes"]
+    : ["deskShow", "deskClouds", "deskFly", "deskAir", "deskGames", "deskNotes"]
 
   // Sticky notes: the service keeps them in ~/.config/perch/notes.json.
   property var notes: []

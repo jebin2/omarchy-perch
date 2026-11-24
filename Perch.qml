@@ -158,7 +158,7 @@ Item {
   // ("desk…"). Flying around between windows is off unless you want it.
   readonly property var views: ({
     "winSky": false, "winSenses": true, "winBreaks": true,
-    "deskShow": true, "deskFly": true, "deskAir": true, "deskGames": true, "deskNotes": true, "deskSenses": true
+    "deskShow": true, "deskFly": true, "deskAir": true, "deskGames": true, "deskNotes": true, "deskSenses": true, "deskClouds": true
   })
   function opt(key) { return config[key] === undefined ? views[key] : config[key] === true }
   // How she gets to the next window: "run" (jumps only to go up or down),
@@ -174,6 +174,7 @@ Item {
   readonly property bool deskGames: opt("deskGames")
   readonly property bool deskNotes: opt("deskNotes")
   readonly property bool deskSenses: opt("deskSenses")
+  readonly property bool deskClouds: opt("deskClouds")
   // Screenshots taken with the `shot` key binding: "pose" (she strikes a
   // selfie pose for it) or "hide" (she's out of the picture).
   readonly property string shots: config.shots === "hide" ? "hide" : "pose"
@@ -1023,7 +1024,7 @@ Item {
     // character <name> | size <0.5..2.0> | shown true/false | talk true/false
     // | shots pose/hide | attitude sweet/some/lots/diva/loop
     // | winMove run/jump/fly | winSky, winSenses, winBreaks, deskShow, deskFly, deskAir, deskGames,
-    //   deskNotes, deskSenses true/false
+    //   deskNotes, deskSenses, deskClouds true/false
     function set(key: string, value: string): void {
       root.setOption(String(key || ""), String(value || ""))
     }

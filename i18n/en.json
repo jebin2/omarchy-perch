@@ -32,6 +32,8 @@
   "view.desk": "Empty workspace",
   "opt.deskShow": "Come to the empty workspace",
   "opt.deskShow.description": "She walks the floor, visits her things and naps there.",
+  "opt.deskClouds": "Clouds",
+  "opt.deskClouds.description": "Soft clouds around the screen she flies up to and sits on.",
   "opt.deskFly": "Fly on her broom",
   "opt.deskFly.description": "Sky trips, flying across the floor, the hello loop.",
   "opt.deskAir": "Weather and seasons",

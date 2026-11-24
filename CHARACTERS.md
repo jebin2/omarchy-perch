@@ -71,7 +71,7 @@ Bind your pieces' rotations and visibility to these; Perch animates them.
 | `action`, `actionCount` | A move asked for with `act <name>` that Perch doesn't do itself (e.g. `act cheer`), and a counter that goes up every time: react in `onActionCountChanged` |
 | `calm`, `sleeping` | Between leg-swinging bursts; napping |
 | `walking`, `walkDir`, `running`, `jumping` | Travelling to the next window (`-1` left, `1` right): along a level edge she walks, `running` on long trips (600 px or more), on the swing (`hanging`) the swing slides; `jumping` when the next window isn't level: she flies there in an arc |
-| `roaming` | She's on the desktop of an empty workspace (the bottom of the screen is her floor); only for packs that set `roams: true` on their root |
+| `roaming` | She's on the floor of an empty workspace (the bottom of the screen); only for packs that set `roams: true` on their root. Up on one of the desktop's clouds it's false: she's sitting somewhere, as on a window |
 | `flying` | On her broom (only packs with `flies: true`): long trips, joyrides and sky trips on the desktop (a loop or two in the sky, a hover, then down somewhere else), the entrance; `walkDir` is the direction |
 | `ambient` (on the pack's root) | Drifting things on the desktop: `"leaves"`, `"petals"`, `"snowflakes"`, `"stars"` (a shooting star now and then: `shootingStar()`), `{ "kind": "fireflies", "x": 0..1 }` |
 | `bubbleAt` (on the pack's root) | `[x, y]` in grid units: soap bubbles float up from there while it's set |

@@ -67,9 +67,57 @@ PanelWindow {
   }
   Timer { id: barTime; onTriggered: if (win.onDesktop && win.deskSpot === "bar") win.climb(false) }
   function leaveLadder() {
-    climbAnim.stop(); barTime.stop()
-    buddy.climbing = false; climbT = 0; ladderUp = false; deskSpot = "floor"
+    climbAnim.stop(); barTime.stop(); cloudTime.stop()
+    buddy.climbing = false; climbT = 0; ladderUp = false; deskSpot = "floor"; cloudIdx = -1
   }
+
+  // ---- Clouds: places to be all over the empty workspace --------------------
+  // A few soft clouds in the theme's colours, at different heights. She flies
+  // (or jumps) up to one, sits there a while, then on to another or back down.
+  readonly property bool cloudsOn: onDesktop && perch.deskClouds
+  // [x across the screen, height between the bar (0) and the floor (1)]
+  readonly property var cloudLayout: [[0.17, 0.3], [0.43, 0.62], [0.68, 0.22], [0.86, 0.55]]
+  property int cloudIdx: -1
+  readonly property real cloudW: buddy.width * 2
+  readonly property real cloudH: cloudW * 0.38
+  // Her seat, as a share of the cloud's height from its top: in the puffs.
+  readonly property real cloudSeatAt: 0.4
+  function cloudLeft(i) { return Math.max(0, Math.min(screenW - cloudW, cloudLayout[i][0] * screenW - cloudW / 2)) }
+  // Where her seat goes: a little into the cloud's top.
+  function cloudSeat(i) {
+    var lo = barTop + buddy.seatY + 24 * buddy.s, hi = screenH - cloudH - 90 * buddy.s
+    return Math.round(lo + cloudLayout[i][1] * Math.max(0, hi - lo))
+  }
+  // A slow bob; she bobs with her cloud.
+  function cloudBob(i) { return 3 * buddy.s * Math.sin(Math.PI * 2 * buddy.t / 6 + i * 1.7) }
+  // And a slow drift to and fro.
+  function cloudDrift(i) { return 14 * buddy.s * Math.sin(Math.PI * 2 * buddy.t / 12 + i * 2.3) }
+  function cloudGo(idx) {
+    if (!onDesktop || buddy.walking || buddy.climbing || buddy.dragging || enterPhase !== "" || falling) return false
+    if (idx >= 0 && (!cloudsOn || idx === cloudIdx)) return false
+    var from = { left: curLeft, top: curTop, hanging: hanging, at: Date.now() }
+    cloudTime.stop()
+    if (idx >= 0) { deskSpot = "cloud"; cloudIdx = idx; roamLeft = clampLeft(cloudLeft(idx) + (cloudW - buddy.width) / 2) }
+    else { deskSpot = "floor"; cloudIdx = -1; roamLeft = clampLeft(Math.random() * (screenW - buddy.width)) }
+    // Up and down she flies if she may, or jumps.
+    var ok = maybeWalk(from, mayFly ? "fly" : "jump")
+    if (idx >= 0) { cloudTime.interval = 25000 + Math.random() * 45000; cloudTime.restart() }
+    return ok
+  }
+  Timer {
+    id: cloudTime
+    onTriggered: {
+      if (win.deskSpot !== "cloud") return
+      if (buddy.walking || buddy.dragging || bubble.active || buddy.meeting || win.perch.sleeping) { interval = 8000; restart(); return }
+      if (win.cloudsOn && Math.random() < 0.4) {
+        var i = Math.floor(Math.random() * win.cloudLayout.length)
+        if (i === win.cloudIdx) i = (i + 1) % win.cloudLayout.length
+        win.cloudGo(i)
+      } else win.cloudGo(-1)
+    }
+  }
+  // Clouds turned off while she's up there: back down.
+  onCloudsOnChanged: if (!cloudsOn && deskSpot === "cloud" && onDesktop) cloudGo(-1)
   // A joyride on her broom, along the desktop.
   function flyTo(x) {
     if (enterPhase !== "" || !mayFly) return
@@ -117,13 +165,14 @@ PanelWindow {
       interval = 6000 + Math.random() * 8000
       if (buddy.walking || buddy.dragging || win.perch.sleeping || win.falling || bubble.active || buddy.meeting || buddy.climbing) return
       if (buddy.focusing || buddy.packStays || win.enterPhase !== "") return   // she stays put while you focus, or while she's busy
-      if (buddy.climbing || win.deskSpot === "bar") return
+      if (buddy.climbing || win.deskSpot !== "floor") return
       var r = Math.random()
       var x = Math.random() * (win.screenW - buddy.width)
       if (r < 0.13 && win.mayFly) win.skyTrip()
       else if (r < 0.18 && win.mayFly && Math.abs(x - win.curLeft) > 300) win.flyTo(x)
       else if (r < 0.23 && buddy.packClimbs && win.floorTop - win.barTop > 200) win.climb(true)
-      else if (r < 0.55 && Math.abs(x - win.curLeft) > 80) win.roamTo(x, false)
+      else if (r < 0.38 && win.cloudsOn) win.cloudGo(Math.floor(Math.random() * win.cloudLayout.length))
+      else if (r < 0.6 && Math.abs(x - win.curLeft) > 80) win.roamTo(x, false)
     }
   }
   property var floorSeat: null
@@ -162,8 +211,9 @@ PanelWindow {
   function hangsOn(y) { return y - buddy.sitHeight < screenY + perch.reservedTop }
   function seatTop(y, hang) { return Math.round(hang ? y + perch.borderSize - screenY : y - buddy.seatY - screenY) }
   readonly property bool hanging: pin ? pin.hanging : onDesktop ? deskSpot === "bar" && !buddy.climbing : hangsOn(perch.winY)
-  readonly property int wantLeft: pin ? pin.left : onDesktop ? Math.round(roamLeft) : Math.round(perch.winX + perch.winW - perch.inset - buddy.width - screenX)
-  readonly property int wantTop: pin ? pin.top : onDesktop ? Math.round(buddy.climbing ? floorTop + (barTop - floorTop) * climbT : deskSpot === "bar" ? barTop : floorTop) : seatTop(perch.winY, hanging)
+  readonly property int wantLeft: pin ? pin.left : onDesktop ? Math.round(roamLeft + (deskSpot === "cloud" && cloudIdx >= 0 ? cloudDrift(cloudIdx) : 0)) : Math.round(perch.winX + perch.winW - perch.inset - buddy.width - screenX)
+  readonly property int wantTop: pin ? pin.top : onDesktop ? Math.round(buddy.climbing ? floorTop + (barTop - floorTop) * climbT : deskSpot === "bar" ? barTop
+      : deskSpot === "cloud" && cloudIdx >= 0 ? cloudSeat(cloudIdx) + cloudBob(cloudIdx) - buddy.seatY : floorTop) : seatTop(perch.winY, hanging)
 
   // ---- Picked up and put down ---------------------------------------------
   // Drag her anywhere: she sits on the window you drop her on (at that
@@ -254,7 +304,7 @@ PanelWindow {
   // it, or the other way when the edge runs out.
   function flee(x) {
     if (buddy.peekSide !== 0) return     // hiding: a click finds her, the pointer doesn't
-    if (onDesktop && (deskSpot === "bar" || buddy.climbing)) { buddy.startle(x < buddy.width / 2 ? 1 : -1); return }
+    if (onDesktop && (deskSpot !== "floor" || buddy.climbing)) { buddy.startle(x < buddy.width / 2 ? 1 : -1); return }
     if (onDesktop) {
       // Along the floor, away from the pointer.
       var away = x < buddy.width / 2 ? 1 : -1
@@ -352,7 +402,8 @@ PanelWindow {
     }
   }
 
-  function maybeWalk(from) {
+  // `force`: "fly" or "jump" whatever the distance (clouds), else as the mode says.
+  function maybeWalk(from, force) {
     if (!from || falling || !win.here || !buddy.motion || win.perch.sleeping || enterPhase !== "") return false
     homeTimer.stop(); dodgeMs = 0; dodge = 0
     var newLeft = clampLeft(wantLeft)
@@ -369,7 +420,7 @@ PanelWindow {
     walkT = 1
     // Fly: on her broom for every trip (just a short hop stays on foot);
     // elsewhere only for far trips.
-    var flyNow = mayFly && dist > (moveMode === "fly" ? 30 * buddy.s : 450)
+    var flyNow = force === "fly" || !force && mayFly && dist > (moveMode === "fly" ? 30 * buddy.s : 450)
     // Room above the higher end of the trip, below the bar: a jump needs
     // some, or it's a flat shuffle in a jumping pose.
     var room = Math.max(0, Math.min(from.top, Math.max(0, wantTop)) - barTop - 6 * buddy.s)
@@ -380,7 +431,7 @@ PanelWindow {
     // room to). On the desktop she jumps only up to or down from it.
     // With no room for an arc (a window under the bar), Jump still leaps up
     // or down: the arc flattens out under the bar.
-    var jumpNow = !flyNow && !swingSlide && (moveMode === "jump" ? canArc || !level : canArc && moveMode === "desk" && !level)
+    var jumpNow = !flyNow && (force === "jump" || !swingSlide && (moveMode === "jump" ? canArc || !level : canArc && moveMode === "desk" && !level))
     tripRun = false
     if (!flyNow && !jumpNow) {
       var run = !swingSlide && (moveMode !== "desk" || !level || Math.abs(dx) >= runFrom)
@@ -671,6 +722,7 @@ PanelWindow {
     function onAct(what) {
       if (!(win.perch.hasWindow && win.onThisScreen) && !win.onDesktop) return
       if (what === "fly") { if (win.onDesktop) win.skyTrip(true); else win.windowFly() }
+      else if (what === "cloud") { if (win.onDesktop && win.cloudsOn) win.cloudGo(win.deskSpot === "cloud" ? -1 : Math.floor(Math.random() * win.cloudLayout.length)) }
       else if (what === "wave") buddy.wave()
       else if (what === "yawn") buddy.yawn()
       else if (what === "stretch") buddy.stretch()
@@ -856,6 +908,25 @@ PanelWindow {
     }
   }
 
+  // The clouds, behind her (clouds/cloud0-3.png, one look each).
+  Repeater {
+    model: win.cloudsOn ? win.cloudLayout.length : 0
+    Image {
+      required property int index
+      width: win.cloudW; height: win.cloudH
+      x: win.cloudLeft(index) + win.cloudDrift(index)
+      y: win.cloudSeat(index) + win.cloudBob(index) - height * win.cloudSeatAt
+      z: -1
+      source: "clouds/cloud" + (index % 4) + ".png"
+      sourceSize.width: 480
+      smooth: true; mipmap: true
+      asynchronous: true
+      opacity: 0
+      Component.onCompleted: opacity = 0.97
+      Behavior on opacity { NumberAnimation { duration: 900 } }
+    }
+  }
+
   // Things her pack puts on the desktop floor (a plant, a pet...). The
   // delegates stay while the list keeps its length, so things glide.
   Repeater {
@@ -962,7 +1033,8 @@ PanelWindow {
     onPoked: function(x) { win.flee(x) }
     onWantsToSay: function(line, topic) { win.perch.speakLine(line, true, topic, "") }
     meeting: win.perch.meeting
-    roaming: win.onDesktop
+    // Up on a cloud she's sitting somewhere, like on a window.
+    roaming: win.onDesktop && win.deskSpot !== "cloud"
     deskX: win.screenW > 0 ? (win.curLeft + width / 2) / win.screenW : 0.5
     music: win.perch.music
     sass: win.perch.sass

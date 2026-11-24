@@ -95,6 +95,7 @@ Perch adds a small kiwi icon to the bar. Click it for a panel to:
 |---|---|---|
 | Getting to the next window | `winMove`: **`run`** (in any direction, up and down too; on her swing under the bar the swing slides), `jump` (every trip up or down; side to side when there's room above her), or `fly` (her broom for every trip, flat along the bar when there is no room above; she also flies in to say hello) | |
 | Sky trips (a broom loop over the screen now and then) | `winSky`, **off** | part of `deskFly` |
+| Clouds to sit on all over the screen (she flies or jumps up, sits a while, moves on) | | `deskClouds`, on |
 | Fly on her broom | | `deskFly`, on |
 | Come to the empty workspace | | `deskShow`, on |
 | Weather and seasons (rain, snow, leaves, petals, fireflies, shooting stars) | | `deskAir`, on |
@@ -188,7 +189,7 @@ case-insensitively, as regular expressions. The sections are `app`, `time`
 ```bash
 omarchy-shell jebin2.perch say "build passed! 🎉"
 omarchy-shell jebin2.perch sign "DON'T overthink"   # holds it up on a sign if her pack has one, else says it
-omarchy-shell jebin2.perch act wave      # also: yawn, stretch, think, fall
+omarchy-shell jebin2.perch act wave      # also: yawn, stretch, think, fall, fly, cloud
 omarchy-shell jebin2.perch focus 25      # a focus timer, in minutes; `focus 0` stops it
 omarchy-shell jebin2.perch note "call mom at 6"   # a sticky note on the desktop; she holds it up at 6
 omarchy-shell jebin2.perch notes         # list them; `unnote 2` or `unnote all` takes them down
