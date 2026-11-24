@@ -164,6 +164,9 @@ Item {
   property string signText: ""
   property int signCount: 0
   function showSign(t) { signText = t || ""; signCount++ }
+  // A pack sets this while she writes on her board or shows its card, so
+  // the speech bubble waits instead of showing on top of it.
+  property bool carding: false
 
   // A pack can make her say something (and show it on a sign): the line
   // goes through Perch like any other, so the quiet gap and Talk apply.
@@ -251,6 +254,11 @@ Item {
   // The pointer touched her: a surprised face and a lean the way she goes.
   property bool startled: false
   property real lean: 0
+  // On her broom: tilted along the way she's flying (nose up climbing, down
+  // diving), set by the window from her real motion.
+  property real flightTilt: 0
+  NumberAnimation { id: tiltHome; target: buddy; property: "flightTilt"; to: 0; duration: 350; easing.type: Easing.OutCubic }
+  onFlyingChanged: if (!flying) tiltHome.restart(); else tiltHome.stop()
   // Which way she scoots when startled: -1 left, 1 right.
   property int startleDir: 1
   signal poked(real x)
@@ -443,6 +451,7 @@ Item {
     transform: [
       Rotation { origin.x: 32 * buddy.s; origin.y: 0; angle: buddy.swing },
       Rotation { origin.x: 32 * buddy.s; origin.y: buddy.seatY; angle: buddy.lean },
+      Rotation { origin.x: 32 * buddy.s; origin.y: buddy.seatY; angle: buddy.flightTilt },
       Rotation { origin.x: 32 * buddy.s; origin.y: buddy.height / 2; angle: buddy.packOwnsFall ? 0 : 40 * buddy.fallT },
       Translate { y: 90 * buddy.s * buddy.fallT * buddy.fallT }
     ]

@@ -461,6 +461,24 @@ PanelWindow {
     return true
   }
 
+  // Her broom follows her path: the angle of her real motion, eased.
+  property real tiltX: 0
+  property real tiltY: 0
+  Timer {
+    interval: 33; repeat: true
+    running: buddy.flying && win.here
+    onRunningChanged: if (running) { win.tiltX = win.curLeft; win.tiltY = win.curTop }
+    onTriggered: {
+      var dx = win.curLeft - win.tiltX, dy = win.curTop - win.tiltY
+      win.tiltX = win.curLeft; win.tiltY = win.curTop
+      // Facing right (walkDir > 0): a positive angle dips her nose. Hovering:
+      // level again.
+      var a = Math.abs(dx) + Math.abs(dy) < 0.5 ? 0 : Math.atan2(dy, Math.abs(dx)) * 180 / Math.PI * (buddy.walkDir > 0 ? 1 : -1)
+      a = Math.max(-32, Math.min(32, a))
+      buddy.flightTilt += (a - buddy.flightTilt) * 0.22
+    }
+  }
+
   property bool falling: false
   property int fallLeft: 0
   property int fallTop: 0
@@ -698,7 +716,9 @@ PanelWindow {
 
     function onSay(line, topic, mood) {
       if (!((win.perch.hasWindow && win.onThisScreen) || win.onDesktop) || win.falling) return
-      bubble.show(line)
+      // Busy with her board or card: say it once that's down (the newest line wins).
+      if (buddy.carding) { win.laterSay = { line: line, topic: topic, mood: mood, at: Date.now() }; return }
+      bubble.show(line, topic)
       buddy.heard(topic, mood, line)
     }
 
@@ -1008,8 +1028,33 @@ PanelWindow {
     }
   }
 
+  // A line held back while her card was up (see onSay).
+  property var laterSay: null
+  Connections {
+    target: buddy
+    function onCardingChanged() {
+      if (buddy.carding) { bubble.dismiss(); return }
+      var l = win.laterSay
+      win.laterSay = null
+      if (!l || Date.now() - l.at > 15000) return
+      laterSayTimer.l = l
+      laterSayTimer.restart()
+    }
+  }
+  Timer {
+    id: laterSayTimer
+    property var l: null
+    interval: 700
+    onTriggered: {
+      if (!l || buddy.carding || win.falling) return
+      bubble.show(l.line, l.topic)
+      buddy.heard(l.topic, l.mood, l.line)
+    }
+  }
+
   Bubble {
     id: bubble
+    zoom: Math.max(1, Math.min(1.25, 0.7 + 0.3 * buddy.s))
     x: buddy.x - width + 2
     y: buddy.y + Math.round((buddy.pad + 6) * buddy.s)
   }

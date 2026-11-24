@@ -26,7 +26,7 @@ She shows up on the focused window. Nothing else to set up.
 - **Travels** to the window you switch to, then waves: along a level edge
   she **walks** (runs if it's far; on her swing under the bar the swing
   slides along), and anywhere else on the screen she **jumps** there.
-- **Talks** in little cloud bubbles (see below).
+- **Talks** in puffy comic cloud bubbles that pop in, type out and float away; a yellow one that shakes when she shouts, little puffs when she thinks. She keeps one at a time: speech waits while her sign is up.
 - **Yawns** a few seconds before she naps, then **naps** after 90 seconds
   without keyboard or mouse input: eyes closed, a sleep bubble and a few z's.
   While a video is playing (anything that keeps the screen awake) she stays
@@ -203,8 +203,9 @@ Handy at the end of a long script.
 
 ## Every line she says
 
-All 93 lines from [`lines.json`](lines.json), by when she says them. A line
-shown in all three columns is said in any mood. To change or add lines, see
+All 213 lines from [`lines.json`](lines.json), by when she says them. A line
+shown in all three columns is said in any mood. Her **Attitude** setting decides
+how often she picks a sassy one. To change or add lines, see
 [Your own lines](#your-own-lines).
 
 ### Greetings by time of day
@@ -213,12 +214,12 @@ The first time she appears, after a long nap, and sometimes as chatter.
 
 | Time | Serious | Fun | Sassy |
 |---|---|---|---|
-| Morning (5–11) | morning! water first 💧 | good morning! ☀️<br>morning! ready to go? | up early… or still up late? |
-| Noon (11–14) | eat something real, okay? | lunch time? 🍜 | I'd eat, if I could. you can. |
-| Afternoon (14–18) | afternoon slump? short walk! | afternoon snack? 🍪 | coffee number three, huh ☕ |
-| Evening (18–22) | wrap up soon? | evening already! 🌆 | overtime again? |
-| Night (22–2) | screens off soon, sleep is good | it's getting late… 🌙 | bedtime was a suggestion, I see |
-| Late night (2–5) | it's really late. go to bed. | …why are we still awake 🦉 | even the owls went home |
+| Morning (5–11) | morning! water first 💧 | good morning! ☀️<br>morning! ready to go? | up early… or still up late?<br>coffee first. talk later.<br>rise and… ugh, fine, shine |
+| Noon (11–14) | eat something real, okay? | lunch time? 🍜 | I'd eat, if I could. you can.<br>lunch exists, you know<br>noon already? what did we even do |
+| Afternoon (14–18) | afternoon slump? short walk! | afternoon snack? 🍪 | coffee number three, huh ☕<br>afternoon slump? I'm judging, gently<br>the 3 pm stare. I know it. |
+| Evening (18–22) | wrap up soon? | evening already! 🌆 | overtime again?<br>still here? the evening called, it wants you back<br>logging off soon, right? RIGHT? |
+| Night (22–2) | screens off soon, sleep is good | it's getting late… 🌙 | bedtime was a suggestion, I see<br>night owl or just stubborn?<br>the bed misses you. I don't. kidding. |
+| Late night (2–5) | it's really late. go to bed. | …why are we still awake 🦉 | even the owls went home<br>it's late. even I'm tired of you<br>sleep is free, you know<br>go to bed. I'm serious. sort of. |
 
 ### About the app you switched to
 
@@ -227,27 +228,38 @@ window's class.
 
 | App | Serious | Fun | Sassy |
 |---|---|---|---|
-| **Terminals**<br><sub>`foot`, `alacritty`, `kitty`, `ghostty`, `wezterm`, `konsole`, `terminal`</sub> | commit early, commit often<br>read it twice, run it once | sudo make me a sandwich 🥪<br>type faster, I'm watching 👀<br>ooh, green text time | rm -rf? not on my watch<br>another terminal? bold. |
-| **Browsers**<br><sub>`brave`, `chrom`, `firefox`, `zen`, `librewolf`, `browser`</sub> | bookmark it, then close it<br>tabs eat memory, just saying | one more tab won't hurt<br>ooh, the internet! 🌐 | that's like 40 tabs<br>"research", sure 🙃 |
-| **Editors and notes**<br><sub>`code`, `cursor`, `zed`, `nvim`, `neovim`, `jetbrains`, `idea`, `emacs`, `omawrite`, `typora`, `obsidian`</sub> | small steps, then test<br>good names save hours | ship it! 🚀<br>it works on my machine ✨ | bug or feature? 🐛<br>comments are nice, you know |
-| **Music and video**<br><sub>`spotify`, `mpv`, `vlc`, `celluloid`, `youtube`, `music`</sub> | volume check: protect those ears | ♪ la la la ♪<br>turn it up! 🎶 | your playlist, your rules… I guess |
-| **Chat**<br><sub>`discord`, `telegram`, `signal`, `slack`, `whatsapp`, `element`, `vesktop`</sub> | replying later is okay too | say hi from me! 👋 | gossip time? 👀 |
-| **Games**<br><sub>`steam`, `lutris`, `heroic`, `wine`, `gamescope`, `igi`</sub> | one round, then a break? | game time!! let's go 🎮 | "just one more game" |
-| **File managers**<br><sub>`nautilus`, `thunar`, `dolphin`, `files`</sub> | tidy files, tidy mind | so many folders… | lost something again? |
+| **Terminals**<br><sub>`foot`, `alacritty`, `kitty`, `ghostty`, `wezterm`, `konsole`, `terminal`</sub> | commit early, commit often<br>read it twice, run it once | sudo make me a sandwich 🥪<br>type faster, I'm watching 👀<br>ooh, green text time | rm -rf? not on my watch<br>another terminal? bold.<br>ah yes, the black window of mystery<br>typing like you know what you're doing 💅 |
+| **Browsers**<br><sub>`brave`, `chrom`, `firefox`, `zen`, `librewolf`, `browser`</sub> | bookmark it, then close it<br>tabs eat memory, just saying | one more tab won't hurt<br>ooh, the internet! 🌐 | that's like 40 tabs<br>"research", sure 🙃<br>"just one tab" 🙄<br>research, sure. totally research.<br>close a tab. any tab. please. |
+| **Editors and notes**<br><sub>`code`, `cursor`, `zed`, `nvim`, `neovim`, `jetbrains`, `idea`, `emacs`, `omawrite`, `typora`, `obsidian`</sub> | small steps, then test<br>good names save hours | ship it! 🚀<br>it works on my machine ✨ | bug or feature? 🐛<br>comments are nice, you know<br>it works on your machine, I'm sure<br>that bug? that's a feature now<br>commit message: "fix". iconic. |
+| **Music and video**<br><sub>`spotify`, `mpv`, `vlc`, `celluloid`, `youtube`, `music`</sub> | volume check: protect those ears | ♪ la la la ♪<br>turn it up! 🎶 | your playlist, your rules… I guess<br>this song again? okay…<br>your playlist says a lot about you |
+| **Chat**<br><sub>`discord`, `telegram`, `signal`, `slack`, `whatsapp`, `element`, `vesktop`</sub> | replying later is okay too | say hi from me! 👋 | gossip time? 👀<br>gossip time? spill 👀<br>they can wait. I can't. |
+| **Games**<br><sub>`steam`, `lutris`, `heroic`, `wine`, `gamescope`, `igi`</sub> | one round, then a break? | game time!! let's go 🎮 | "just one more game"<br>"just one game". sure.<br>I've seen you play. good luck 😏 |
+| **File managers**<br><sub>`nautilus`, `thunar`, `dolphin`, `files`</sub> | tidy files, tidy mind | so many folders… | lost something again?<br>lost something? shocking.<br>that Downloads folder is a crime scene |
 
 ### Events and chatter
 
 | When | Serious | Fun | Sassy |
 |---|---|---|---|
-| Random chatter, every few minutes | posture check!<br>blink a few times, eyes need it<br>deep breath in… and out<br>drink some water 💧 | *hums*<br>I like this corner<br>swing, swing, swing~<br>do windows have feelings?<br>hehe | I could do this faster<br>are we working or what?<br>I see you. 👀<br>nice cursor work. I guess. |
-| After an hour of activity | an hour in. stand up and stretch?<br>water break? 💧 | stretch with me! ~<br>wiggle your toes 🦶 | your chair can survive without you. stand up. |
-| Battery at 15% or less | battery's low, plug in soon | I'm hungry… charger? 🔋 | feed me or we both nap |
-| Charger plugged in | charging, thanks! | nom nom ⚡<br>yum, power! | finally, food |
-| Charger unplugged | on battery now, go easy | off the leash! 🏃‍♀️ | living dangerously |
-| Her window closed (she falls off) | oof. found a new spot. | waah! 😵<br>whoops! | hey! I was sitting there |
-| New theme | fresh look! | new outfit! ✨<br>ooh, I like this color | do I look good? I look good. |
-| Back after a nap | welcome back | oh! you're back 👋<br>*stretches* hi again | took you long enough |
+| Random chatter, every few minutes | posture check!<br>blink a few times, eyes need it<br>deep breath in… and out<br>drink some water 💧 | *hums*<br>I like this corner<br>swing, swing, swing~<br>do windows have feelings?<br>hehe | I could do this faster<br>are we working or what?<br>I see you. 👀<br>nice cursor work. I guess.<br>I'm not saying you're procrastinating… but you are 💅<br>that tab count is a cry for help<br>wow. riveting. 🙄<br>is this the plan, or…?<br>I'd help, but I'm busy being adorable<br>you call that a break? I call it a lifestyle<br>*checks nails* oh, you're still here<br>bold of you to ignore me |
+| After an hour of activity | an hour in. stand up and stretch?<br>water break? 💧 | stretch with me! ~<br>wiggle your toes 🦶 | your chair can survive without you. stand up.<br>your chair misses you less than you think<br>up. walk. now. don't argue<br>break time, unless you're a robot |
+| A focus session starts | focus · {min} min | focus mode · {min} min 🎧<br>{min} min. go go go! | {min} min. no tabs. I'm watching.<br>focus? you? okay, let's see<br>fine, I'll pretend I'm not here<br>phone down. I'm watching 👀 |
+| A focus session ends | time's up. take 5. | done! break time 🌸<br>you did it! stretch 🙆 | timer's done. so are you. break.<br>look at you, being productive<br>done? I'm almost impressed<br>okay fine, that was good |
+| Battery at 15% or less | battery's low, plug in soon | I'm hungry… charger? 🔋 | feed me or we both nap<br>charger. now. I'm not dying for this<br>running on vibes and 10%? brave |
+| Charger plugged in | charging, thanks! | nom nom ⚡<br>yum, power! | finally, food<br>finally. was that so hard?<br>plugged in. you're welcome. |
+| Charger unplugged | on battery now, go easy | off the leash! 🏃‍♀️ | living dangerously<br>oh, we're living dangerously now?<br>no charger? okay, adventurer |
+| Her window closed (she falls off) | oof. found a new spot. | waah! 😵<br>whoops! | hey! I was sitting there<br>rude. I was MID-swing<br>you could've warned me 🙄<br>and you didn't even say bye |
+| New theme | fresh look! | new outfit! ✨<br>ooh, I like this color | do I look good? I look good.<br>hmm… we'll see about this one<br>new look. same you.<br>I liked the last one better. just saying |
+| Back after a nap | welcome back | oh! you're back 👋<br>*stretches* hi again | took you long enough<br>oh, NOW you're back<br>I wasn't waiting. at all. |
 | Yawning before a nap | *yaaawn*<br>*yawn*… so sleepy | *yaaawn*<br>*yawn*… so sleepy | *yaaawn*<br>*yawn*… so sleepy |
+| A notification (`{app}` is the app) | {app} wants you. | 📩 {app}!<br>ooh, {app} 👀 | {app} again?<br>{app} again? they're obsessed with you<br>ignore {app}. I'm more interesting<br>{app}, {app}, {app}… 🙄 |
+| Volume up | volume up. | turn it up! 🎵<br>ooh, I like this one 🎶 | louder? bold.<br>okay DJ, calm down<br>louder? bold choice |
+| Volume down | volume down. | shh, a bit quieter 🤫 | thank you.<br>thank you. my ears say thanks<br>quieter. smart. |
+| Volume at 100% | that's very loud. careful with your ears. | my ears!! 🙉<br>LOUD. love it. ow. | are we deaf now?<br>are you deaf or is it a banger?<br>my ears! have some mercy |
+| Muted | muted. | shhh 🤫 | finally, silence.<br>silence. finally.<br>shh yourself |
+| Brighter screen | brighter. | sunshine! ☀️ | I can see everything now.<br>blinding me, I see<br>brighter? you're glowing, I'm squinting |
+| Dimmer screen | dimmer. easy on the eyes. | cozy mode 😴 | mood lighting?<br>moody lighting. I like it.<br>dim? hiding something? |
+| Full brightness | full brightness. easy on the eyes. | so bright! 😎<br>my eyes ☀ | is that the sun?<br>sunglasses, obviously 😎<br>I can see your soul at this brightness |
+| A screenshot | screenshot taken. | cheese! 📸<br>did you get my good side? ✌️ | was I in it?<br>obviously my good side 💅<br>tag me 📸<br>you're welcome for the cameo |
 
 ## How it works
 
@@ -298,3 +310,6 @@ omarchy restart shell
 ## License
 
 MIT. Mochi is an original character, drawn for this plugin.
+
+Speech balloons use [Comic Neue](https://github.com/crozynski/comicneue)
+(SIL Open Font License 1.1, see [`fonts/OFL.txt`](fonts/OFL.txt)).
