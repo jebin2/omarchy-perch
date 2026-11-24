@@ -430,7 +430,11 @@ Item {
   readonly property real breathe: 1 + (0.012 + 0.01 * sleepAmt) * wav(3)
   readonly property real armR: waveAmt * (-112 + 16 * wav(0.5)) - 112 * stretchAmt - 55 * yawnAmt
   readonly property real armL: 112 * stretchAmt + 25 * yawnAmt
-  readonly property real swing: hanging ? 2.4 * (0.35 + 0.65 * energy) * wav(3, 0.5) : 0
+  // On her swing: a slow gentle sway, plus real pumping (back and forth
+  // every 1.5 s) while she's lively. `pump` runs -1..1 with that motion, so a
+  // character can kick its legs in time (forward near +1, tucked near -1).
+  readonly property real pump: hanging ? legEnergy * wav(1.5) : 0
+  readonly property real swing: hanging ? 1.6 * energy * wav(3, 0.5) + 8 * pump : 0
 
   Item {
     id: swingRoot
