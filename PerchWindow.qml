@@ -26,13 +26,13 @@ PanelWindow {
   // the screen. Every 6-14 s she may walk (or run) somewhere; the pack
   // decides what she does in between. Opening a window, she jumps up on it.
   readonly property bool onDesktop: perch.desktop && perch.deskShow && buddy.packRoams && !!screen
+    && perch.desktopMonitor === screen.name
   // Flying (broom trips, the loop when she says hello) in the view she's in.
   readonly property bool mayFly: buddy.packFlies && (onDesktop ? perch.deskFly : perch.winMove === "fly")
   // How she gets to a new spot: on the desktop she strolls ("desk": walks,
   // runs far, flies very far if allowed); between windows "run", "jump" or
   // "fly", as picked in the panel.
   readonly property string moveMode: onDesktop ? "desk" : perch.winMove
-    && perch.desktopMonitor === screen.name
   property real roamLeft: 0
   // Up on the bar (after climbing her ladder): she swings from it.
   property string deskSpot: "floor"    // "floor" or "bar"
@@ -367,7 +367,9 @@ PanelWindow {
     walkDX = dx
     walkDY = dy
     walkT = 1
-    var flyNow = mayFly && dist > (moveMode === "fly" ? 250 : 450)
+    // Fly: on her broom for every trip (just a short hop stays on foot);
+    // elsewhere only for far trips.
+    var flyNow = mayFly && dist > (moveMode === "fly" ? 30 * buddy.s : 450)
     // Room above the higher end of the trip, below the bar: a jump needs
     // some, or it's a flat shuffle in a jumping pose.
     var room = Math.max(0, Math.min(from.top, Math.max(0, wantTop)) - barTop - 6 * buddy.s)
@@ -376,7 +378,9 @@ PanelWindow {
     var swingSlide = level && from.hanging && hanging
     // Run: she runs there in any direction. Jump: she jumps (where there's
     // room to). On the desktop she jumps only up to or down from it.
-    var jumpNow = !flyNow && !swingSlide && canArc && (moveMode === "jump" || (moveMode === "desk" && !level))
+    // With no room for an arc (a window under the bar), Jump still leaps up
+    // or down: the arc flattens out under the bar.
+    var jumpNow = !flyNow && !swingSlide && (moveMode === "jump" ? canArc || !level : canArc && moveMode === "desk" && !level)
     tripRun = false
     if (!flyNow && !jumpNow) {
       var run = !swingSlide && (moveMode !== "desk" || !level || Math.abs(dx) >= runFrom)

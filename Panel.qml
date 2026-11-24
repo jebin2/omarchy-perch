@@ -37,7 +37,11 @@ Panel {
   })
   function opt(key) { return config[key] === undefined ? views[key] : config[key] === true }
   readonly property string shots: config.shots === "hide" ? "hide" : "pose"
-  readonly property string attitude: /^(sweet|some|lots|diva)$/.test(config.attitude) ? config.attitude : "some"
+  readonly property string attitude: /^(sweet|some|lots|diva|loop)$/.test(config.attitude) ? config.attitude : "some"
+  // In "loop", which one is on now (the same clock rule as the plugin).
+  property real nowClock: Date.now()
+  Timer { interval: 30000; running: root.attitude === "loop"; repeat: true; triggeredOnStart: true; onTriggered: root.nowClock = Date.now() }
+  readonly property string attitudeNow: ["sweet", "some", "lots", "diva"][Math.floor(nowClock / 900000) % 4]
   property string view: "win"
   readonly property string winMove: /^(run|jump|fly)$/.test(String(config.winMove)) ? config.winMove : config.winFly === true ? "fly" : "run"
   readonly property var viewKeys: view === "win"
@@ -280,7 +284,7 @@ Panel {
           spacing: Style.space(6)
           Text {
             textFormat: Text.PlainText
-            text: strings.t("attitude")
+            text: strings.t("attitude") + (root.attitude === "loop" ? " · " + strings.t("attitude.now") + " " + strings.t("attitude." + root.attitudeNow) : "")
             color: Qt.darker(root.bar.foreground, 1.4)
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.caption
@@ -289,7 +293,8 @@ Panel {
           ButtonGroup {
             width: parent.width
             options: [{ value: "sweet", label: strings.t("attitude.sweet") }, { value: "some", label: strings.t("attitude.some") },
-                      { value: "lots", label: strings.t("attitude.lots") }, { value: "diva", label: strings.t("attitude.diva") }]
+                      { value: "lots", label: strings.t("attitude.lots") }, { value: "diva", label: strings.t("attitude.diva") },
+                      { value: "loop", label: strings.t("attitude.loop") }]
             value: root.attitude
             foreground: root.bar.foreground
             fontFamily: root.bar.fontFamily

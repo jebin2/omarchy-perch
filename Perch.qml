@@ -180,8 +180,13 @@ Item {
   // Her attitude: how often she picks a sassy line (and, in packs that
   // read buddy.sass, a sassy pose). "sweet" never, "some" now and then,
   // "lots" half the time, "diva" most of the time.
-  readonly property string attitude: /^(sweet|some|lots|diva)$/.test(config.attitude) ? config.attitude : "some"
-  readonly property real sass: ({ sweet: 0, some: 0.25, lots: 0.5, diva: 0.8 })[attitude]
+  // "loop" goes through all four in turn, 15 minutes each (by the clock, so
+  // the panel can tell which one is on).
+  readonly property string attitude: /^(sweet|some|lots|diva|loop)$/.test(config.attitude) ? config.attitude : "some"
+  property real loopClock: Date.now()
+  Timer { interval: 60000; running: root.attitude === "loop"; repeat: true; onTriggered: root.loopClock = Date.now() }
+  readonly property string attitudeNow: attitude === "loop" ? ["sweet", "some", "lots", "diva"][Math.floor(loopClock / 900000) % 4] : attitude
+  readonly property real sass: ({ sweet: 0, some: 0.25, lots: 0.5, diva: 0.8 })[attitudeNow]
 
   readonly property real minSize: 0.5
   readonly property real maxSize: 2.0
@@ -223,7 +228,7 @@ Item {
     if (key === "character" && validName(value)) c.character = value
     else if (key === "size" && isFinite(Number(value))) c.size = Math.round(Math.max(minSize, Math.min(maxSize, Number(value))) * 100) / 100
     else if (key === "shots" && /^(pose|hide)$/.test(value)) c.shots = value
-    else if (key === "attitude" && /^(sweet|some|lots|diva)$/.test(value)) c.attitude = value
+    else if (key === "attitude" && /^(sweet|some|lots|diva|loop)$/.test(value)) c.attitude = value
     else if (key === "winMove" && /^(run|jump|fly)$/.test(value)) { c.winMove = value; delete c.winFly }
     else if (key === "shown" || key === "talk" || views[key] !== undefined) c[key] = value === true || value === "true"
     else return
@@ -1016,7 +1021,7 @@ Item {
     }
 
     // character <name> | size <0.5..2.0> | shown true/false | talk true/false
-    // | shots pose/hide | attitude sweet/some/lots/diva
+    // | shots pose/hide | attitude sweet/some/lots/diva/loop
     // | winMove run/jump/fly | winSky, winSenses, winBreaks, deskShow, deskFly, deskAir, deskGames,
     //   deskNotes, deskSenses true/false
     function set(key: string, value: string): void {

@@ -93,7 +93,7 @@ Perch adds a small kiwi icon to the bar. Click it for a panel to:
 
 | Switch | With windows | Empty workspace |
 |---|---|---|
-| Getting to the next window | `winMove`: **`run`** (in any direction, up and down too; on her swing under the bar the swing slides), `jump` (always, when there's room above her), or `fly` (her broom for anything but short trips; she also flies in to say hello) | |
+| Getting to the next window | `winMove`: **`run`** (in any direction, up and down too; on her swing under the bar the swing slides), `jump` (every trip up or down; side to side when there's room above her), or `fly` (her broom for every trip, flat along the bar when there is no room above; she also flies in to say hello) | |
 | Sky trips (a broom loop over the screen now and then) | `winSky`, **off** | part of `deskFly` |
 | Fly on her broom | | `deskFly`, on |
 | Reactions (volume and brightness up/down, mute, screenshots, notifications) | `winSenses`, on | `deskSenses`, on |
@@ -105,7 +105,8 @@ Perch adds a small kiwi icon to the bar. Click it for a panel to:
 
 Her **Attitude** (`attitude`) applies everywhere: `sweet` (never sassy),
 **`some`** (a little sass), `lots` (sassy half the time) or `diva` (sassy
-most of the time). Characters that know it also roll their eyes, flip their
+most of the time), or `loop` (all four in turn, 15 minutes each; the panel
+shows which one is on). Characters that know it also roll their eyes, flip their
 hair and check their nails more the sassier she is.
 
 The panel saves to `~/.config/perch/config.json`, which you can also edit:
